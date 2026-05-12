@@ -1,5 +1,3 @@
--- ============================================================
--- Pennywise seed data — local dev / testing only
 --
 -- The test user UUID below MUST exist in auth.users before
 -- running this seed.  In a local Supabase environment you can
@@ -11,7 +9,6 @@
 --
 -- Then replace the UUID below with the one that command prints,
 -- or insert directly (local dev only):
--- ============================================================
 
 DO $$
 DECLARE
@@ -25,7 +22,6 @@ DECLARE
   v_cat_misc     uuid := '00000000-0000-0000-0000-000000000014';
 BEGIN
 
--- ── 1. Test user in auth.users (local dev only) ──────────────
 INSERT INTO auth.users (
   id,
   email,
@@ -52,12 +48,10 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- ── 2. Public user profile ────────────────────────────────────
 INSERT INTO public.users (id, email, monthly_income)
 VALUES (v_user_id, 'test@pennywise.dev', 50000.00)
 ON CONFLICT (id) DO NOTHING;
 
--- ── 3. Categories — ₦50,000/month student budget ─────────────
 -- food 35%, transport 20%, data 15%, leisure 20%, misc 10%
 INSERT INTO public.categories
   (id, user_id, name, monthly_budget, color, is_custom)
@@ -69,7 +63,6 @@ VALUES
   (v_cat_misc,    v_user_id, 'misc',       5000.00, '#6B7280', false)
 ON CONFLICT (id) DO NOTHING;
 
--- ── 4. Transactions — 10 entries over the last 14 days ────────
 INSERT INTO public.transactions
   (user_id, category_id, amount, note, source, merchant_raw, created_at)
 VALUES
@@ -84,7 +77,6 @@ VALUES
   (v_user_id, v_cat_food,    1500.00, NULL,              'manual', 'Shawarma spot',      now() - interval '5 days'),
   (v_user_id, v_cat_data,    1000.00, 'Airtel airtime',  'manual', 'Airtel',             now() - interval '4 days');
 
--- ── 5. Recurring rule — monthly "rent-equivalent" ─────────────
 INSERT INTO public.recurring_rules
   (user_id, category_id, amount, note, frequency, next_fire_at)
 VALUES
@@ -97,7 +89,6 @@ VALUES
     date_trunc('month', now()) + interval '1 month'
   );
 
--- ── 6. Daily logs — last 7 days, discipline scores 60-85 ──────
 INSERT INTO public.daily_logs
   (user_id, date, discipline_score, total_spent)
 VALUES
@@ -112,7 +103,6 @@ ON CONFLICT (user_id, date) DO UPDATE
   SET discipline_score = EXCLUDED.discipline_score,
       total_spent      = EXCLUDED.total_spent;
 
--- ── 7. Streak — current_streak = 7 ───────────────────────────
 INSERT INTO public.streaks
   (user_id, current_streak, longest_streak, last_logged_at)
 VALUES

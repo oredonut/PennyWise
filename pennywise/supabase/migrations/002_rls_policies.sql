@@ -1,9 +1,4 @@
--- Row Level Security: authenticated users only; row scope = auth.uid() matches owner column.
 -- Trigger: mirror new auth.users into public.users (SECURITY DEFINER bypasses RLS as definer).
-
--- ---------------------------------------------------------------------------
--- Trigger: auto-create public.users on auth signup
--- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
@@ -27,10 +22,6 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- ---------------------------------------------------------------------------
--- Enable RLS
--- ---------------------------------------------------------------------------
-
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
@@ -45,9 +36,7 @@ ALTER TABLE public.streaks ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.merchant_map ENABLE ROW LEVEL SECURITY;
 
--- ---------------------------------------------------------------------------
 -- public.users — owner column is id (same as auth.users id)
--- ---------------------------------------------------------------------------
 
 CREATE POLICY users_select_own ON public.users
   FOR SELECT TO authenticated
@@ -65,10 +54,6 @@ CREATE POLICY users_update_own ON public.users
 CREATE POLICY users_delete_own ON public.users
   FOR DELETE TO authenticated
   USING (auth.uid() = id);
-
--- ---------------------------------------------------------------------------
--- Tables keyed by user_id
--- ---------------------------------------------------------------------------
 
 CREATE POLICY categories_select_own ON public.categories
   FOR SELECT TO authenticated
@@ -171,10 +156,6 @@ CREATE POLICY merchant_map_update_own ON public.merchant_map
 CREATE POLICY merchant_map_delete_own ON public.merchant_map
   FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------------
--- No anonymous access to app tables (policies are TO authenticated only)
--- ---------------------------------------------------------------------------
 
 REVOKE ALL ON TABLE public.users FROM anon;
 

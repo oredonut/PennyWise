@@ -1,5 +1,4 @@
 /**
- * Canonical database types for `public` tables (mirrors `001_initial_schema.sql`).
  * PostgREST returns `numeric` as string; `date` as `YYYY-MM-DD` string.
  * `Relationships: []` is required by supabase-js v2 GenericTable — foreign keys are
  * not tracked here because we don't rely on Supabase's join type inference.

@@ -1,5 +1,3 @@
--- Pennywise initial schema (public app tables + auth.users linkage)
-
 -- gen_random_uuid() is available on Supabase Postgres without extra extensions.
 
 CREATE TABLE public.users (

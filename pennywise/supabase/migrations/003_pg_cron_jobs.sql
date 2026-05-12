@@ -1,5 +1,3 @@
--- pg_cron + pg_net: invoke Pennywise Edge Functions on a fixed UTC schedule.
---
 -- BEFORE DEPLOY (required):
 --   1. Replace <PROJECT_REF> in both URLs with your Supabase project ref
 --      (pattern: https://<PROJECT_REF>.supabase.co/functions/v1/<function-name>).
@@ -39,7 +37,6 @@ BEGIN
 END;
 $$;
 
--- 1) fire-recurring — daily 00:01 UTC
 SELECT
   cron.schedule (
     'pennywise-fire-recurring-daily',
@@ -58,7 +55,6 @@ SELECT
       ) AS request_id;
 $cron$);
 
--- 2) compute-daily-score — daily 23:55 UTC
 SELECT
   cron.schedule (
     'pennywise-compute-daily-score-daily',
