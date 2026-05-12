@@ -1,6 +1,8 @@
 /**
  * Canonical database types for `public` tables (mirrors `001_initial_schema.sql`).
  * PostgREST returns `numeric` as string; `date` as `YYYY-MM-DD` string.
+ * `Relationships: []` is required by supabase-js v2 GenericTable — foreign keys are
+ * not tracked here because we don't rely on Supabase's join type inference.
  */
 
 export type Json =
@@ -33,6 +35,7 @@ export type Database = {
           monthly_income?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       categories: {
         Row: {
@@ -62,6 +65,7 @@ export type Database = {
           is_custom?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -94,6 +98,7 @@ export type Database = {
           merchant_raw?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       recurring_rules: {
         Row: {
@@ -123,6 +128,7 @@ export type Database = {
           frequency?: string | null
           next_fire_at?: string
         }
+        Relationships: []
       }
       daily_logs: {
         Row: {
@@ -146,6 +152,7 @@ export type Database = {
           discipline_score?: string | null
           total_spent?: string | null
         }
+        Relationships: []
       }
       streaks: {
         Row: {
@@ -169,6 +176,7 @@ export type Database = {
           longest_streak?: number
           last_logged_at?: string | null
         }
+        Relationships: []
       }
       merchant_map: {
         Row: {
@@ -189,6 +197,7 @@ export type Database = {
           merchant_keyword?: string
           category_id?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -198,6 +207,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
