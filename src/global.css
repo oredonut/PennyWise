@@ -1,0 +1,26 @@
+/* PennyWise – Global CSS */
+
+/* ─── Google Fonts ──────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+:root {
+  /* Font stacks */
+  --font-display:
+    'Inter', 'Outfit', ui-sans-serif, system-ui, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono,
+    Courier New, monospace;
+  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* ── PennyWise Brand Palette ──────────────────────────────────────────── */
+  --color-primary:    #0F766E; /* Deep Teal  */
+  --color-accent:     #22C55E; /* Emerald Green */
+  --color-bg:         #F8FAFC; /* Off White  */
+  --color-surface:    #E2E8F0; /* Soft Gray  */
+  --color-text:       #0F172A; /* Dark Slate */
+  --color-warning:    #F59E0B; /* Amber      */
+  --color-danger:     #EF4444; /* Soft Red   */
+  --color-text-muted: #475569;
+}
