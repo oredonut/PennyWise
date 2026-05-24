@@ -55,7 +55,7 @@ Multi-select checklist. "What do you mostly spend on?"
 - Subscriptions · School supplies
 
 **Step 2 — Monthly income:**
-
+  
 Single input. "How much do you receive monthly? ₦ "
 
 **Step 3 — Smart budget distribution:**
