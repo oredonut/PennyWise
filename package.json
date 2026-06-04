@@ -1,0 +1,9 @@
+{
+  "name": "pennywise-root",
+  "private": true,
+  "workspaces": ["pennywise", "mobile"],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=pennywise",
+    "dev:app": "npm run start --workspace=mobile"
+  }
+}

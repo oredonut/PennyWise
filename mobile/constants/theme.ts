@@ -1,10 +1,10 @@
 /**
- * PennyWise Design System – Colors, Fonts & Spacing
+ * PennyWise Design System – Colors, Fonts, Spacing & Radius
  *
  * Color palette:
- *   Primary    Deep Teal      #0F766E
+ *   Primary    Teal           #0D9488
  *   Accent     Emerald Green  #22C55E
- *   Background Off White      #F8FAFC
+ *   Background Warm Off-White #F7F6F2
  *   Surface    Soft Gray      #E2E8F0
  *   Text       Dark Slate     #0F172A
  *   Warning    Amber          #F59E0B
@@ -21,18 +21,24 @@ import { Platform } from 'react-native';
 // (e.g. always-on status badges, charts, illustrations).
 // ---------------------------------------------------------------------------
 export const Palette = {
-  /** Deep Teal – primary actions, CTAs, active nav */
-  primary: '#0F766E',
+  /** Teal – primary actions, CTAs, active nav, score ring */
+  primary: '#0D9488',
+  /** Teal Light – badge/pill tinted backgrounds */
+  tealLight: '#CCFBF1',
+  /** Teal Border – subtle teal outlines */
+  tealBorder: 'rgba(13,148,136,0.20)',
   /** Emerald Green – success, income, positive deltas */
   accent: '#22C55E',
-  /** Off White – page background */
-  backgroundLight: '#F8FAFC',
+  /** Warm Off-White – page background */
+  backgroundLight: '#F7F6F2',
   /** Soft Gray – cards, surfaces, input backgrounds */
   surface: '#E2E8F0',
   /** Dark Slate – primary body text */
   slate: '#0F172A',
   /** Amber – warnings, budget threshold alerts */
   warning: '#F59E0B',
+  /** Amber Light – score pill backgrounds */
+  amberLight: '#FEF3C7',
   /** Soft Red – expenses, overspend, danger states */
   danger: '#EF4444',
 } as const;
@@ -44,7 +50,7 @@ export const Colors = {
   light: {
     /** Primary body text — Dark Slate */
     text: Palette.slate,
-    /** Page / screen background — Off White */
+    /** Page / screen background — Warm Off-White */
     background: Palette.backgroundLight,
     /** Card / element background — Soft Gray */
     backgroundElement: Palette.surface,
@@ -52,7 +58,7 @@ export const Colors = {
     backgroundSelected: '#CBD5E1',
     /** Muted / secondary text */
     textSecondary: '#475569',
-    /** Primary brand colour — Deep Teal */
+    /** Primary brand colour — Teal */
     primary: Palette.primary,
     /** Accent colour — Emerald Green */
     accent: Palette.accent,
@@ -64,10 +70,10 @@ export const Colors = {
   dark: {
     /** Primary body text */
     text: '#F1F5F9',
-    /** Page background — deep teal-navy */
-    background: '#0A1628',
+    /** Page background — pure dark */
+    background: '#0D0D10',
     /** Card / element background */
-    backgroundElement: '#132032',
+    backgroundElement: '#18181B',
     /** Selected / pressed element background */
     backgroundSelected: '#1E3448',
     /** Muted / secondary text */
@@ -88,35 +94,20 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 // ---------------------------------------------------------------------------
 // Fonts
 // ---------------------------------------------------------------------------
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const Fonts = {
+  /** Plus Jakarta Sans ExtraBold – headings, score display, wordmark */
+  display: 'PlusJakartaSans_800ExtraBold',
+  /** DM Sans Regular – body text, UI labels */
+  body: 'DMSans_400Regular',
+  /** DM Sans Medium – monospaced fallback until DM Mono is installed */
+  mono: 'DMSans_500Medium',
+} as const;
 
 // ---------------------------------------------------------------------------
 // Spacing scale  (multiples of 4)
 // ---------------------------------------------------------------------------
 export const Spacing = {
+  // Numeric scale (legacy)
   half: 2,
   one: 4,
   two: 8,
@@ -124,6 +115,24 @@ export const Spacing = {
   four: 24,
   five: 32,
   six: 64,
+  // Named scale
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Border Radius tokens
+// ---------------------------------------------------------------------------
+export const BorderRadius = {
+  sm: 6,    // tags, badges, category icons
+  md: 10,   // buttons, inputs, warning toasts
+  lg: 14,   // cards
+  xl: 18,   // score card, bottom sheets
+  full: 999, // pills, progress bars, FAB
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
