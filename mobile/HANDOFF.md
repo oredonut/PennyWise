@@ -380,3 +380,16 @@ Inspect `PennyWise.html` in a browser to see every screen rendered.
     ScribbleLayer. See `design.md §6` for full rules and `Scribble_Layer.html`
     for the RN SVG export utility.
 Please delete when done... ;)
+---
+
+## Fresh Dev Setup (updated)
+
+```bash
+cd mobile
+cp .env.example .env.local   # fill in Supabase keys when available — app works without them
+npm install --legacy-peer-deps
+npx expo start --tunnel
+```
+
+Scan the QR with Expo Go (must be logged in to the same Expo account).
+The `--legacy-peer-deps` flag is required — Expo's Google Fonts packages have loose peer dep declarations.
