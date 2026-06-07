@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '@/lib/supabase';
-import { Colors, Radius, FontFamily } from '@/tokens';
+import { Radius, FontFamily } from '@/tokens';
+import { useTheme } from '../../lib/useTheme';
 
 type RootStackParamList = { Login: undefined; Register: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Register'> };
@@ -41,14 +42,15 @@ function getStrength(pw: string): number {
   return score;
 }
 
-function strengthColor(score: number): string {
-  if (score === 0) return Colors.border;
-  if (score === 1) return Colors.danger;
-  if (score === 2) return Colors.amber;
-  return Colors.teal;
+function strengthColor(score: number, tokens: any): string {
+  if (score === 0) return tokens.border;
+  if (score === 1) return tokens.danger;
+  if (score === 2) return tokens.amber;
+  return tokens.teal;
 }
 
 export default function RegisterScreen({ navigation }: Props) {
+  const { tokens, isDark, setThemeMode } = useTheme();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [university, setUniversity] = useState('');
@@ -65,7 +67,7 @@ export default function RegisterScreen({ navigation }: Props) {
   const [passFocused, setPassFocused] = useState(false);
 
   const strength = getStrength(password);
-  const color = strengthColor(strength);
+  const color = strengthColor(strength, tokens);
 
   const handleRegister = async () => {
     setError('');
@@ -87,9 +89,34 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, { backgroundColor: tokens.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Dynamic Theme Toggle in Top Right */}
+      <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 54 : 16, right: 24, zIndex: 10 }}>
+        <TouchableOpacity
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: tokens.surface,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: tokens.border,
+            shadowColor: '#000',
+            shadowOpacity: 0.05,
+            shadowRadius: 5,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 2,
+          }}
+          onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
+          activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 18 }}>{isDark ? '☀️' : '🌙'}</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -97,24 +124,32 @@ export default function RegisterScreen({ navigation }: Props) {
       >
         {/* Brand */}
         <View style={styles.brandRow}>
-          <View style={styles.logomark}>
-            <Text style={styles.logomarkSymbol}>₦</Text>
+          <View style={[styles.logomark, { backgroundColor: tokens.tealLight }]}>
+            <Text style={[styles.logomarkSymbol, { color: tokens.teal }]}>₦</Text>
           </View>
           <Text style={styles.wordmark}>
-            <Text style={styles.wordmarkPenny}>Penny</Text>
-            <Text style={styles.wordmarkWise}>Wise</Text>
+            <Text style={[styles.wordmarkPenny, { color: tokens.text1 }]}>Penny</Text>
+            <Text style={{ color: tokens.teal }}>Wise</Text>
           </Text>
         </View>
 
         {/* Heading */}
-        <Text style={styles.heading}>Create account</Text>
-        <Text style={styles.subtext}>Track your spending. Own your score.</Text>
+        <Text style={[styles.heading, { color: tokens.text1 }]}>Create account</Text>
+        <Text style={[styles.subtext, { color: tokens.text2 }]}>Track your spending. Own your score.</Text>
 
         {/* Full name */}
         <TextInput
-          style={[styles.input, nameFocused && styles.inputFocused]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+              color: tokens.text1,
+            },
+            nameFocused && { borderColor: tokens.teal },
+          ]}
           placeholder="Full name"
-          placeholderTextColor={Colors.text3}
+          placeholderTextColor={tokens.text3}
           value={fullName}
           onChangeText={setFullName}
           autoCapitalize="words"
@@ -124,9 +159,17 @@ export default function RegisterScreen({ navigation }: Props) {
 
         {/* Email */}
         <TextInput
-          style={[styles.input, emailFocused && styles.inputFocused]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+              color: tokens.text1,
+            },
+            emailFocused && { borderColor: tokens.teal },
+          ]}
           placeholder="Email"
-          placeholderTextColor={Colors.text3}
+          placeholderTextColor={tokens.text3}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -138,23 +181,45 @@ export default function RegisterScreen({ navigation }: Props) {
 
         {/* University dropdown trigger */}
         <TouchableOpacity
-          style={[styles.input, styles.dropdownTrigger, university !== '' && styles.inputSelected]}
+          style={[
+            styles.input,
+            styles.dropdownTrigger,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+            university !== '' && { borderColor: tokens.teal },
+          ]}
           onPress={() => setShowUniPicker(true)}
           activeOpacity={0.8}
         >
-          <Text style={university !== '' ? styles.dropdownValueText : styles.dropdownPlaceholder}>
+          <Text
+            style={[
+              styles.dropdownPlaceholder,
+              university !== '' && { color: tokens.teal },
+            ]}
+          >
             {university !== '' ? university : 'University'}
           </Text>
-          <Text style={styles.chevron}>›</Text>
+          <Text style={[styles.chevron, { color: tokens.text3 }]}>›</Text>
         </TouchableOpacity>
 
         {/* Monthly budget */}
-        <View style={[styles.budgetWrap, budgetFocused && styles.inputFocused]}>
-          <Text style={styles.budgetPrefix}>₦</Text>
+        <View
+          style={[
+            styles.budgetWrap,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+            budgetFocused && { borderColor: tokens.teal },
+          ]}
+        >
+          <Text style={[styles.budgetPrefix, { color: tokens.text2 }]}>₦</Text>
           <TextInput
-            style={styles.budgetInput}
+            style={[styles.budgetInput, { color: tokens.text1 }]}
             placeholder="0.00"
-            placeholderTextColor={Colors.text3}
+            placeholderTextColor={tokens.text3}
             value={monthlyBudget}
             onChangeText={setMonthlyBudget}
             keyboardType="numeric"
@@ -162,14 +227,23 @@ export default function RegisterScreen({ navigation }: Props) {
             onBlur={() => setBudgetFocused(false)}
           />
         </View>
-        <Text style={styles.budgetHint}>we won't judge 👀</Text>
+        <Text style={[styles.budgetHint, { color: tokens.text3 }]}>we won't judge 👀</Text>
 
         {/* Password */}
-        <View style={[styles.passwordWrap, passFocused && styles.inputFocused]}>
+        <View
+          style={[
+            styles.passwordWrap,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+            passFocused && { borderColor: tokens.teal },
+          ]}
+        >
           <TextInput
-            style={styles.passwordInput}
+            style={[styles.passwordInput, { color: tokens.text1 }]}
             placeholder="Password"
-            placeholderTextColor={Colors.text3}
+            placeholderTextColor={tokens.text3}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -189,7 +263,7 @@ export default function RegisterScreen({ navigation }: Props) {
                 key={i}
                 style={[
                   styles.strengthSegment,
-                  { backgroundColor: i < strength ? color : Colors.border },
+                  { backgroundColor: i < strength ? color : tokens.border },
                 ]}
               />
             ))}
@@ -197,38 +271,51 @@ export default function RegisterScreen({ navigation }: Props) {
         )}
 
         {/* Error */}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.danger }]}>{error}</Text> : null}
 
         {/* Primary CTA */}
         <TouchableOpacity
-          style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+          style={[
+            styles.primaryBtn,
+            { backgroundColor: tokens.teal },
+            loading && styles.primaryBtnDisabled,
+          ]}
           onPress={handleRegister}
           disabled={loading}
           activeOpacity={0.85}
         >
-          <Text style={styles.primaryBtnText}>
+          <Text style={[styles.primaryBtnText, { color: tokens.surface }]}>
             {loading ? 'Creating account…' : 'Create account'}
           </Text>
         </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>or</Text>
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
+          <Text style={[styles.dividerLabel, { color: tokens.text3 }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
         </View>
 
         {/* Google */}
-        <TouchableOpacity style={styles.outlinedBtn} activeOpacity={0.8}>
-          <Text style={styles.googleG}>G</Text>
-          <Text style={styles.outlinedBtnText}>Continue with Google</Text>
+        <TouchableOpacity
+          style={[
+            styles.outlinedBtn,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+          ]}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.googleG, { color: tokens.text1 }]}>G</Text>
+          <Text style={[styles.outlinedBtnText, { color: tokens.text1 }]}>Continue with Google</Text>
         </TouchableOpacity>
 
         {/* Footer */}
         <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.footerRow}>
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, { color: tokens.text2 }]}>
             Already have an account?{' '}
-            <Text style={styles.footerLink}>Log in</Text>
+            <Text style={{ fontFamily: FontFamily.bodySemiBold, color: tokens.teal }}>Log in</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -241,9 +328,9 @@ export default function RegisterScreen({ navigation }: Props) {
         onRequestClose={() => setShowUniPicker(false)}
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowUniPicker(false)} />
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Select University</Text>
+        <View style={[styles.modalSheet, { backgroundColor: tokens.surface }]}>
+          <View style={[styles.modalHandle, { backgroundColor: tokens.border }]} />
+          <Text style={[styles.modalTitle, { color: tokens.text1 }]}>Select University</Text>
           <FlatList
             data={UNIVERSITIES}
             keyExtractor={item => item}
@@ -251,7 +338,8 @@ export default function RegisterScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={[
                   styles.modalItem,
-                  item === university && styles.modalItemSelected,
+                  { borderBottomColor: tokens.border },
+                  item === university && { backgroundColor: tokens.tealLight },
                 ]}
                 onPress={() => {
                   setUniversity(item);
@@ -261,13 +349,14 @@ export default function RegisterScreen({ navigation }: Props) {
                 <Text
                   style={[
                     styles.modalItemText,
-                    item === university && styles.modalItemTextSelected,
+                    { color: tokens.text1 },
+                    item === university && { fontFamily: FontFamily.bodySemiBold, color: tokens.teal },
                   ]}
                 >
                   {item}
                 </Text>
                 {item === university && (
-                  <Text style={styles.checkmark}>✓</Text>
+                  <Text style={[styles.checkmark, { color: tokens.teal }]}>✓</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -281,7 +370,6 @@ export default function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.bg,
   },
   scroll: {
     flexGrow: 1,
@@ -299,54 +387,38 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 16,
-    backgroundColor: Colors.tealLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logomarkSymbol: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 22,
-    color: Colors.teal,
   },
   wordmark: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 22,
   },
   wordmarkPenny: {
-    color: Colors.text1,
-  },
-  wordmarkWise: {
-    color: Colors.teal,
+    fontWeight: '800',
   },
   heading: {
     fontFamily: FontFamily.display,
     fontSize: 26,
-    color: Colors.text1,
     marginBottom: 6,
   },
   subtext: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    color: Colors.text2,
     marginBottom: 32,
   },
   input: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
     marginBottom: 12,
-  },
-  inputFocused: {
-    borderColor: Colors.teal,
-  },
-  inputSelected: {
-    borderColor: Colors.teal,
   },
   dropdownTrigger: {
     flexDirection: 'row',
@@ -356,24 +428,15 @@ const styles = StyleSheet.create({
   dropdownPlaceholder: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text3,
-  },
-  dropdownValueText: {
-    fontFamily: FontFamily.body,
-    fontSize: 15,
-    color: Colors.teal,
   },
   chevron: {
     fontSize: 20,
-    color: Colors.text3,
     transform: [{ rotate: '90deg' }],
   },
   budgetWrap: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -382,19 +445,16 @@ const styles = StyleSheet.create({
   budgetPrefix: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.text2,
     marginRight: 6,
   },
   budgetInput: {
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
   },
   budgetHint: {
     fontFamily: FontFamily.body,
     fontSize: 12,
-    color: Colors.text3,
     marginBottom: 12,
     paddingLeft: 20,
   },
@@ -402,8 +462,6 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -413,7 +471,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
   },
   eyeIcon: {
     fontSize: 18,
@@ -433,14 +490,12 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.danger,
     marginBottom: 12,
     textAlign: 'center',
   },
   primaryBtn: {
     height: 52,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.teal,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -451,7 +506,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: FontFamily.display,
     fontSize: 16,
-    color: Colors.surface,
     letterSpacing: 0.2,
   },
   divider: {
@@ -463,19 +517,15 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
   },
   dividerLabel: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.text3,
   },
   outlinedBtn: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -485,31 +535,19 @@ const styles = StyleSheet.create({
   googleG: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 16,
-    color: Colors.text1,
   },
   outlinedBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.text1,
   },
   footerRow: {
     alignItems: 'center',
-  },
-  footerText: {
-    fontFamily: FontFamily.body,
-    fontSize: 14,
-    color: Colors.text2,
-  },
-  footerLink: {
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.teal,
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   modalSheet: {
-    backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingBottom: 40,
@@ -519,7 +557,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 16,
@@ -527,7 +564,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: FontFamily.display,
     fontSize: 17,
-    color: Colors.text1,
     paddingHorizontal: 24,
     marginBottom: 8,
   },
@@ -538,22 +574,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  modalItemSelected: {
-    backgroundColor: Colors.tealLight,
   },
   modalItemText: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
-  },
-  modalItemTextSelected: {
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.teal,
   },
   checkmark: {
     fontSize: 16,
-    color: Colors.teal,
   },
 });

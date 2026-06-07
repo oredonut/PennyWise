@@ -19,7 +19,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  RefreshControl, Animated, Easing,
+  RefreshControl, Animated, Easing, StyleSheet, Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -29,6 +29,7 @@ import { ScribbleLayer } from '../../src/components/ScribbleLayer';
 import { useTheme }       from '../../lib/useTheme';
 import { FontFamily }     from '../../tokens';
 import { MOCK_HOME_DATA, HomeData, CategoryBudget } from './mockData';
+import InsightsView       from './InsightsView';
 
 // AMBER RULE — defined once, touched only by score numbers
 const AMBER = '#d97706';
@@ -54,11 +55,13 @@ const mkCard = (tokens: any) => ({
   padding: 16,
   marginHorizontal: 16,
   marginBottom: 12,
+  borderWidth: 1,
+  borderColor: tokens.border,
   shadowColor: '#000',
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 3 },
-  elevation: 3,
+  shadowOpacity: 0.04,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
 });
 
 // ── Score Ring — draws + counts up ────────────────────────────
@@ -138,6 +141,25 @@ function DisciplineScoreCard({ data, tokens, enterAnim }: any) {
             {data.badge}
           </Text>
         </View>
+      </View>
+
+      {/* Right side hand-drawn doodle trend line */}
+      <View style={{ width: 62, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+        <Svg width={60} height={30} viewBox="0 0 60 30">
+          <Path
+            d="M 5 20 Q 15 10 22 18 T 40 8 T 55 12"
+            fill="none"
+            stroke={tokens.teal}
+            strokeWidth={1.8}
+            strokeLinecap="round"
+          />
+          <Circle cx={55} cy={12} r={2.5} fill={tokens.teal} />
+          {/* Sparkle star */}
+          <Path
+            d="M 23 2 L 24.2 3.8 L 26.2 3.8 L 24.6 4.8 L 25.2 6.8 L 23 5.5 L 20.8 6.8 L 21.4 4.8 L 19.8 3.8 L 21.8 3.8 Z"
+            fill={tokens.amber}
+          />
+        </Svg>
       </View>
     </Animated.View>
   );
@@ -248,7 +270,7 @@ function AlertBanner({ alert, tokens, enterAnim }: any) {
       padding: 14,
       flexDirection: 'row', alignItems: 'flex-start', gap: 10,
     }, enterAnim]}>
-      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" style={{ marginTop: 1 }}>
+      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" style={{ marginTop: 2 }}>
         <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" fill={tokens.amber} />
         <Path d="M12 9v4M12 17h.01" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
       </Svg>
@@ -257,7 +279,7 @@ function AlertBanner({ alert, tokens, enterAnim }: any) {
           {alert.message}
         </Text>
         {/* CURRENCY RULE: Mono for the ₦ line */}
-        <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.amber, marginTop: 3 }}>
+        <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.amber, marginTop: 3, fontWeight: '600' }}>
           {alert.amountLine}
         </Text>
       </View>
@@ -354,6 +376,317 @@ function CategoryBudgetsSection({ categories, tokens, enterAnim }: any) {
   );
 }
 
+// ── Recent Transactions Section ───────────────────────────────
+function RecentTransactionsSection({ transactions, tokens, enterAnim }: any) {
+  return (
+    <Animated.View style={enterAnim}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginHorizontal: 16,
+        marginBottom: 10,
+        marginTop: 8
+      }}>
+        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1 }}>
+          Recent
+        </Text>
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.teal }}>
+            See all →
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View style={mkCard(tokens)}>
+        {transactions.map((tx: any, i: number) => {
+          const isIncome = tx.type === 'income';
+          const amtColor = isIncome ? tokens.success : tokens.danger;
+          const prefix = isIncome ? '+' : '-';
+          return (
+            <View
+              key={tx.id}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: i === transactions.length - 1 ? 0 : 16,
+              }}
+            >
+              {/* Icon bubble */}
+              <View style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: tokens.surfaceTint,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}>
+                <Text style={{ fontSize: 18 }}>{tx.emoji}</Text>
+              </View>
+              {/* Name / Info */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 14, color: tokens.text1, marginBottom: 2 }}>
+                  {tx.name}
+                </Text>
+                <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3 }}>
+                  {tx.timeLabel}
+                </Text>
+              </View>
+              {/* Amount - Currency Rule: JetBrains Mono */}
+              <Text style={{
+                fontFamily: FontFamily.mono,
+                fontSize: 14,
+                color: amtColor,
+                fontWeight: '700',
+              }}>
+                {prefix}{fmt(tx.amount)}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+// ── Profile Settings View ─────────────────────────────────────
+function ProfileView({ tokens, themeMode, setThemeMode }: any) {
+  const [budgetVal, setBudgetVal] = useState('25,000');
+
+  const modes = [
+    { id: 'light', label: 'Light Mode', icon: '☀️' },
+    { id: 'dark', label: 'Dark Mode', icon: '🌙' },
+    { id: 'system', label: 'System Default', icon: '⚙️' },
+  ];
+
+  const badges = [
+    { id: 'b1', name: 'Shawarma Slayer', emoji: '🍔', status: 'Unlocked', desc: 'Avoided food bankruptcy.' },
+    { id: 'b2', name: 'Bolt Walker', emoji: '🚶‍♂️', status: 'Unlocked', desc: 'Walked instead of ride booking.' },
+    { id: 'b3', name: 'Data Saver', emoji: '📱', status: 'Locked', desc: 'Stayed 15% under data budget.' },
+    { id: 'b4', name: 'Roast Survivor', emoji: '💀', status: 'Locked', desc: 'Improved grade after a roast.' },
+  ];
+
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 12 }}>
+      {/* Page Title */}
+      <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 28, color: tokens.text1, marginBottom: 16, paddingLeft: 8 }}>
+        Profile
+      </Text>
+
+      {/* ── 1. Student Identity Header ── */}
+      <View style={[mkCard(tokens), { flexDirection: 'row', alignItems: 'center', gap: 14 }]}>
+        {/* Avatar bubble */}
+        <View style={{
+          width: 62, height: 62, borderRadius: 31,
+          backgroundColor: tokens.tealLight,
+          alignItems: 'center', justifyContent: 'center',
+          borderWidth: 2, borderColor: tokens.teal,
+          position: 'relative'
+        }}>
+          <Text style={{ fontSize: 32 }}>🎓</Text>
+          {/* Grade Badge */}
+          <View style={{
+            position: 'absolute', bottom: -4, right: -4,
+            width: 22, height: 22, borderRadius: 11,
+            backgroundColor: tokens.amber,
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 1.5, borderColor: tokens.surface
+          }}>
+            <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 11, color: '#fff' }}>B</Text>
+          </View>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 18, color: tokens.text1, marginBottom: 2 }}>
+            Tunde
+          </Text>
+          <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text2 }}>
+            Covenant University
+          </Text>
+          <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: tokens.teal, marginTop: 4 }}>
+            Grade B Saver · Member since May 2025
+          </Text>
+        </View>
+      </View>
+
+      {/* ── 2. Streaks & Stats ── */}
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
+        <View style={[mkCard(tokens), { flex: 1, alignItems: 'center', paddingVertical: 12, marginRight: 0 }]}>
+          <Text style={{ fontSize: 20, marginBottom: 4 }}>🔥</Text>
+          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 16, color: tokens.text1 }}>
+            12 days
+          </Text>
+          <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: tokens.text3 }}>
+            Current Streak
+          </Text>
+        </View>
+        <View style={[mkCard(tokens), { flex: 1, alignItems: 'center', paddingVertical: 12, marginLeft: 0 }]}>
+          <Text style={{ fontSize: 20, marginBottom: 4 }}>🏆</Text>
+          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 16, color: tokens.text1 }}>
+            28 days
+          </Text>
+          <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: tokens.text3 }}>
+            Longest Streak
+          </Text>
+        </View>
+      </View>
+
+      {/* ── 3. Discipline Badges ── */}
+      <View style={mkCard(tokens)}>
+        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 12 }}>
+          Discipline Badges
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
+          {badges.map((b) => {
+            const isUnlocked = b.status === 'Unlocked';
+            return (
+              <View key={b.id} style={{
+                width: '47%',
+                backgroundColor: tokens.surfaceTint + '40',
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: tokens.border,
+                padding: 10,
+                alignItems: 'center',
+                opacity: isUnlocked ? 1 : 0.55
+              }}>
+                <Text style={{ fontSize: 26, marginBottom: 4 }}>{b.emoji}</Text>
+                <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 11, color: tokens.text1, textAlign: 'center', marginBottom: 2 }}>
+                  {b.name}
+                </Text>
+                <Text style={{ fontFamily: FontFamily.body, fontSize: 8, color: tokens.text3, textAlign: 'center' }}>
+                  {b.desc}
+                </Text>
+                <View style={{
+                  marginTop: 6,
+                  paddingHorizontal: 6, paddingVertical: 2,
+                  borderRadius: 4,
+                  backgroundColor: isUnlocked ? tokens.tealLight : tokens.border
+                }}>
+                  <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 8, color: isUnlocked ? tokens.teal : tokens.text3 }}>
+                    {b.status}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* ── 4. Financial Controls ── */}
+      <View style={mkCard(tokens)}>
+        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 8 }}>
+          Monthly Budget Limit
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={{ fontFamily: FontFamily.body, fontSize: 12, color: tokens.text2 }}>
+              Your current spending cap:
+            </Text>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 18, color: tokens.teal, fontWeight: '700', marginTop: 2 }}>
+              ₦{budgetVal}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{
+              backgroundColor: tokens.surfaceTint,
+              paddingHorizontal: 12, paddingVertical: 6,
+              borderRadius: 8, borderWidth: 1, borderColor: tokens.border
+            }}
+            onPress={() => {
+              const newVal = budgetVal === '25,000' ? '30,000' : '25,000';
+              setBudgetVal(newVal);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.text1 }}>
+              Toggle Limit
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── 5. Theme Settings ── */}
+      <View style={mkCard(tokens)}>
+        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 6 }}>
+          Theme Override
+        </Text>
+        <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text2, marginBottom: 16 }}>
+          Choose how PennyWise displays.
+        </Text>
+
+        {modes.map(mode => {
+          const isActive = themeMode === mode.id;
+          return (
+            <TouchableOpacity
+              key={mode.id}
+              onPress={() => setThemeMode(mode.id)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 14,
+                borderBottomWidth: mode.id === 'system' ? 0 : 1,
+                borderBottomColor: tokens.border,
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>{mode.icon}</Text>
+                <Text style={{
+                  fontFamily: isActive ? FontFamily.bodySemiBold : FontFamily.body,
+                  fontSize: 15,
+                  color: tokens.text1
+                }}>
+                  {mode.label}
+                </Text>
+              </View>
+              {isActive && (
+                <Text style={{ color: tokens.teal, fontSize: 16, fontFamily: FontFamily.displayXBold }}>✓</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* ── 6. Log Out Button ── */}
+      <TouchableOpacity
+        style={{
+          marginHorizontal: 16,
+          marginBottom: 32,
+          paddingVertical: 14,
+          borderRadius: 12,
+          backgroundColor: tokens.danger + '15',
+          borderWidth: 1,
+          borderColor: tokens.danger + '40',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.danger }}>
+          Log Out
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ── History Placeholder View ──────────────────────────────────
+function HistoryView({ tokens }: any) {
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 12, alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <Text style={{ fontSize: 48, marginBottom: 16 }}>📜</Text>
+      <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 18, color: tokens.text1, marginBottom: 8 }}>
+        Transaction History
+      </Text>
+      <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text3, textAlign: 'center', paddingHorizontal: 40, lineHeight: 18 }}>
+        Your full transaction history will appear here once you link your bank account.
+      </Text>
+    </View>
+  );
+}
+
 // ── Icon paths ─────────────────────────────────────────────────
 const ICONS = {
   home:     'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
@@ -363,7 +696,6 @@ const ICONS = {
 };
 
 // ── Bottom Nav ─────────────────────────────────────────────────
-// Note: No ScribbleLayer here — bottom nav is a surface, not a screen
 function BottomNav({ active, onPress, tokens, insets }: any) {
   const tabs = [
     { id: 'home',     label: 'Home',     icon: ICONS.home     },
@@ -381,6 +713,12 @@ function BottomNav({ active, onPress, tokens, insets }: any) {
       backgroundColor: tokens.surface,
       borderTopWidth: 1, borderTopColor: tokens.border,
       flexDirection: 'row', alignItems: 'center',
+      zIndex: 10,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 10,
     }}>
       {tabs.map(tab => {
         if (tab.id === 'fab') {
@@ -418,9 +756,9 @@ function BottomNav({ active, onPress, tokens, insets }: any) {
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
               <Path
                 d={tab.icon}
-                fill={isActive ? tokens.teal : 'none'}
+                fill={isActive && tab.id !== 'insights' ? tokens.teal : 'none'}
                 stroke={isActive ? tokens.teal : tokens.text3}
-                strokeWidth={isActive ? 0 : 1.6}
+                strokeWidth={isActive ? 2 : 1.6}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -441,23 +779,27 @@ function BottomNav({ active, onPress, tokens, insets }: any) {
 
 // ── Main Screen ───────────────────────────────────────────────
 export default function HomeScreen({ navigation }: any) {
-  const { tokens, isDark } = useTheme();
+  const { tokens, isDark, themeMode, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
 
   // TODO (backend): replace MOCK_HOME_DATA with real API call
-  // const [data, setData] = useState<HomeData>(MOCK_HOME_DATA);
-  // useEffect(() => { fetchDashboard(session.access_token).then(setData); }, []);
   const data: HomeData = MOCK_HOME_DATA;
 
   const [activeTab,  setActiveTab]  = useState('home');
   const [refreshing, setRefreshing] = useState(false);
 
-  // ── Staggered entrance — 5 sections, 110 ms apart ────────────
+  // Weekday selection
+  const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const activeDayIndex = 6; // Sunday active
+
+  // ── Staggered entrance — 7 sections, 110 ms apart ────────────
   const cardAnims = useRef(
-    Array.from({ length: 5 }, () => new Animated.Value(0))
+    Array.from({ length: 7 }, () => new Animated.Value(0))
   ).current;
 
   useEffect(() => {
+    // Reset and trigger entrance animation
+    cardAnims.forEach(anim => anim.setValue(0));
     Animated.stagger(
       110,
       cardAnims.map(anim =>
@@ -469,7 +811,7 @@ export default function HomeScreen({ navigation }: any) {
         })
       )
     ).start();
-  }, []);
+  }, [activeTab]);
 
   const enter = (i: number) => ({
     opacity: cardAnims[i],
@@ -483,7 +825,6 @@ export default function HomeScreen({ navigation }: any) {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // TODO (backend): re-fetch dashboard data here, then call setRefreshing(false)
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
@@ -496,83 +837,173 @@ export default function HomeScreen({ navigation }: any) {
       {/* Scribble — z=0, pointer-events none */}
       <ScribbleLayer color={tokens.doodle} />
 
-      <ScrollView
-        style={{ flex: 1, zIndex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: navHeight + 16 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={tokens.teal}
-            colors={[tokens.teal]}
+      {activeTab === 'home' && (
+        <ScrollView
+          style={{ flex: 1, zIndex: 1 }}
+          contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: navHeight + 16 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={tokens.teal}
+              colors={[tokens.teal]}
+            />
+          }
+        >
+          {/* ── 0 · Header ───────────────────────────────────── */}
+          <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 16 }, enter(0)]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontFamily: FontFamily.bodySemiBold, fontSize: 11,
+                  color: tokens.text3, letterSpacing: 0.7, marginBottom: 4,
+                }}>
+                  {dateLabel()}
+                </Text>
+                <Text style={{
+                  fontFamily: FontFamily.displayXBold, fontSize: 26,
+                  color: tokens.text1, lineHeight: 32,
+                }}>
+                  {greeting()}{'\n'}{data.user.firstName} 👋
+                </Text>
+              </View>
+
+              {/* Theme Toggle & Streak Row */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                {/* Theme Toggle Button */}
+                <TouchableOpacity
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    backgroundColor: tokens.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: tokens.border,
+                  }}
+                  onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
+                </TouchableOpacity>
+
+                {/* Streak pill */}
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: tokens.tealLight,
+                  borderRadius: 999,
+                  paddingHorizontal: 10, paddingVertical: 6,
+                  gap: 4,
+                }}>
+                  <Text style={{ fontSize: 13 }}>🔥</Text>
+                  <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.teal }}>
+                    {data.user.streakDays}d
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* ── Weekday Strip Tracker Selector ────────────────── */}
+          <Animated.View style={[{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 16 }, enter(1)]}>
+            {DAYS.map((d, idx) => {
+              const isToday = idx === activeDayIndex;
+              return (
+                <View
+                  key={idx}
+                  style={{
+                    height: 36,
+                    borderRadius: 8,
+                    backgroundColor: isToday ? tokens.teal : tokens.tealLight + '40',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1,
+                    marginHorizontal: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: FontFamily.bodySemiBold,
+                      fontSize: 13,
+                      color: isToday ? '#fff' : tokens.teal,
+                    }}
+                  >
+                    {d}
+                  </Text>
+                </View>
+              );
+            })}
+          </Animated.View>
+
+          {/* ── 2 · Discipline Score Card ─────────────────────── */}
+          <DisciplineScoreCard
+            data={data.disciplineScore}
+            tokens={tokens}
+            enterAnim={enter(2)}
           />
-        }
-      >
 
-        {/* ── 0 · Header ───────────────────────────────────── */}
-        <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 16 }, enter(0)]}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View>
-              <Text style={{
-                fontFamily: FontFamily.bodySemiBold, fontSize: 11,
-                color: tokens.text3, letterSpacing: 0.7, marginBottom: 4,
-              }}>
-                {dateLabel()}
-              </Text>
-              <Text style={{
-                fontFamily: FontFamily.displayXBold, fontSize: 26,
-                color: tokens.text1, lineHeight: 34,
-              }}>
-                {greeting()}{'\n'}{data.user.firstName} 👋
-              </Text>
-            </View>
+          {/* ── 3 · Budget Card ──────────────────────────────── */}
+          <BudgetCard
+            data={data.budget}
+            tokens={tokens}
+            enterAnim={enter(3)}
+          />
 
-            {/* Streak pill */}
-            <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: tokens.tealLight,
-              borderRadius: 999,
-              paddingHorizontal: 12, paddingVertical: 6,
-              gap: 5, marginTop: 4,
-            }}>
-              <Text style={{ fontSize: 13 }}>🔥</Text>
-              <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.teal }}>
-                {data.user.streakDays} day streak
-              </Text>
-            </View>
-          </View>
-        </Animated.View>
+          {/* ── 4 · Alert Banner ────────────────────────────── */}
+          <AlertBanner
+            alert={data.alert}
+            tokens={tokens}
+            enterAnim={enter(4)}
+          />
 
-        {/* ── 1 · Discipline Score ─────────────────────────── */}
-        <DisciplineScoreCard
-          data={data.disciplineScore}
-          tokens={tokens}
-          enterAnim={enter(1)}
-        />
+          {/* ── 5 · Category Budgets ─────────────────────────── */}
+          <CategoryBudgetsSection
+            categories={data.categories}
+            tokens={tokens}
+            enterAnim={enter(5)}
+          />
 
-        {/* ── 2 · Budget Card ──────────────────────────────── */}
-        <BudgetCard
-          data={data.budget}
-          tokens={tokens}
-          enterAnim={enter(2)}
-        />
+          {/* ── 6 · Recent Transactions List ─────────────────── */}
+          <RecentTransactionsSection
+            transactions={data.recentTransactions}
+            tokens={tokens}
+            enterAnim={enter(6)}
+          />
 
-        {/* ── 3 · Alert Banner (conditional) ──────────────── */}
-        <AlertBanner
-          alert={data.alert}
-          tokens={tokens}
-          enterAnim={enter(3)}
-        />
+        </ScrollView>
+      )}
 
-        {/* ── 4 · Category Budgets ─────────────────────────── */}
-        <CategoryBudgetsSection
-          categories={data.categories}
-          tokens={tokens}
-          enterAnim={enter(4)}
-        />
+      {activeTab === 'insights' && (
+        <ScrollView
+          style={{ flex: 1, zIndex: 1 }}
+          contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: navHeight + 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <InsightsView data={data.insights} tokens={tokens} />
+        </ScrollView>
+      )}
 
-      </ScrollView>
+      {activeTab === 'history' && (
+        <ScrollView
+          style={{ flex: 1, zIndex: 1 }}
+          contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: navHeight + 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <HistoryView tokens={tokens} />
+        </ScrollView>
+      )}
+
+      {activeTab === 'profile' && (
+        <ScrollView
+          style={{ flex: 1, zIndex: 1 }}
+          contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: navHeight + 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProfileView tokens={tokens} themeMode={themeMode} setThemeMode={setThemeMode} />
+        </ScrollView>
+      )}
 
       {/* ── Bottom Nav (fixed) ───────────────────────────────── */}
       <BottomNav

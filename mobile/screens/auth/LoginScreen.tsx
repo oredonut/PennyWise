@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '@/lib/supabase';
-import { Colors, Radius, FontFamily } from '@/tokens';
+import { Radius, FontFamily } from '@/tokens';
+import { useTheme } from '../../lib/useTheme';
 
 type RootStackParamList = { Login: undefined; Register: undefined; Home: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> };
 
 export default function LoginScreen({ navigation }: Props) {
+  const { tokens, isDark, setThemeMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -47,9 +49,34 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, { backgroundColor: tokens.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Dynamic Theme Toggle in Top Right */}
+      <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 54 : 16, right: 24, zIndex: 10 }}>
+        <TouchableOpacity
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: tokens.surface,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: tokens.border,
+            shadowColor: '#000',
+            shadowOpacity: 0.05,
+            shadowRadius: 5,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 2,
+          }}
+          onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
+          activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 18 }}>{isDark ? '☀️' : '🌙'}</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -57,24 +84,32 @@ export default function LoginScreen({ navigation }: Props) {
       >
         {/* Brand */}
         <View style={styles.brandRow}>
-          <View style={styles.logomark}>
-            <Text style={styles.logomarkSymbol}>₦</Text>
+          <View style={[styles.logomark, { backgroundColor: tokens.tealLight }]}>
+            <Text style={[styles.logomarkSymbol, { color: tokens.teal }]}>₦</Text>
           </View>
           <Text style={styles.wordmark}>
-            <Text style={styles.wordmarkPenny}>Penny</Text>
-            <Text style={styles.wordmarkWise}>Wise</Text>
+            <Text style={[styles.wordmarkPenny, { color: tokens.text1 }]}>Penny</Text>
+            <Text style={{ color: tokens.teal }}>Wise</Text>
           </Text>
         </View>
 
         {/* Heading */}
-        <Text style={styles.heading}>Welcome back 👋</Text>
-        <Text style={styles.subtext}>Log in to check your score</Text>
+        <Text style={[styles.heading, { color: tokens.text1 }]}>Welcome back 👋</Text>
+        <Text style={[styles.subtext, { color: tokens.text2 }]}>Log in to check your score</Text>
 
         {/* Email */}
         <TextInput
-          style={[styles.input, emailFocused && styles.inputFocused]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+              color: tokens.text1,
+            },
+            emailFocused && { borderColor: tokens.teal },
+          ]}
           placeholder="tunde@gmail.com"
-          placeholderTextColor={Colors.text3}
+          placeholderTextColor={tokens.text3}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -85,11 +120,20 @@ export default function LoginScreen({ navigation }: Props) {
         />
 
         {/* Password */}
-        <View style={[styles.passwordWrap, passFocused && styles.inputFocused]}>
+        <View
+          style={[
+            styles.passwordWrap,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+            passFocused && { borderColor: tokens.teal },
+          ]}
+        >
           <TextInput
-            style={styles.passwordInput}
+            style={[styles.passwordInput, { color: tokens.text1 }]}
             placeholder="Password"
-            placeholderTextColor={Colors.text3}
+            placeholderTextColor={tokens.text3}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -103,46 +147,71 @@ export default function LoginScreen({ navigation }: Props) {
 
         {/* Forgot */}
         <TouchableOpacity style={styles.forgotRow}>
-          <Text style={styles.forgotText}>Forgot password?</Text>
+          <Text style={[styles.forgotText, { color: tokens.teal }]}>Forgot password?</Text>
         </TouchableOpacity>
 
         {/* Error */}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.danger }]}>{error}</Text> : null}
 
         {/* Primary CTA */}
         <TouchableOpacity
-          style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+          style={[
+            styles.primaryBtn,
+            { backgroundColor: tokens.teal },
+            loading && styles.primaryBtnDisabled,
+          ]}
           onPress={handleLogin}
           disabled={loading}
           activeOpacity={0.85}
         >
-          <Text style={styles.primaryBtnText}>{loading ? 'Logging in…' : 'Log in'}</Text>
+          <Text style={[styles.primaryBtnText, { color: tokens.surface }]}>
+            {loading ? 'Logging in…' : 'Log in'}
+          </Text>
         </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>or</Text>
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
+          <Text style={[styles.dividerLabel, { color: tokens.text3 }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
         </View>
 
         {/* Google */}
-        <TouchableOpacity style={styles.outlinedBtn} activeOpacity={0.8}>
-          <Text style={styles.googleG}>G</Text>
-          <Text style={styles.outlinedBtnText}>Continue with Google</Text>
+        <TouchableOpacity
+          style={[
+            styles.outlinedBtn,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+          ]}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.googleG, { color: tokens.text1 }]}>G</Text>
+          <Text style={[styles.outlinedBtnText, { color: tokens.text1 }]}>
+            Continue with Google
+          </Text>
         </TouchableOpacity>
 
         {/* Footer */}
-        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.footerRow}>
-          <Text style={styles.footerText}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Register')}
+          style={styles.footerRow}
+        >
+          <Text style={[styles.footerText, { color: tokens.text2 }]}>
             New here?{' '}
-            <Text style={styles.footerLink}>Sign up</Text>
+            <Text style={{ fontFamily: FontFamily.bodySemiBold, color: tokens.teal }}>Sign up</Text>
           </Text>
         </TouchableOpacity>
 
         {/* ── DEV ONLY — remove before production ────────────────── */}
-        <TouchableOpacity onPress={goHomeNow} style={styles.devBypass}>
-          <Text style={styles.devBypassText}>⚡ Preview Home (dev bypass)</Text>
+        <TouchableOpacity
+          onPress={goHomeNow}
+          style={[styles.devBypass, { borderColor: tokens.border }]}
+        >
+          <Text style={[styles.devBypassText, { color: tokens.text3 }]}>
+            ⚡ Preview Home (dev bypass)
+          </Text>
         </TouchableOpacity>
         {/* ─────────────────────────────────────────────────────────── */}
       </ScrollView>
@@ -153,7 +222,6 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.bg,
   },
   scroll: {
     flexGrow: 1,
@@ -171,58 +239,46 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 16,
-    backgroundColor: Colors.tealLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logomarkSymbol: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 22,
-    color: Colors.teal,
   },
   wordmark: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 22,
   },
   wordmarkPenny: {
-    color: Colors.text1,
-  },
-  wordmarkWise: {
-    color: Colors.teal,
+    fontWeight: '800',
   },
   heading: {
     fontFamily: FontFamily.display,
     fontSize: 26,
-    color: Colors.text1,
     marginBottom: 6,
   },
   subtext: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    color: Colors.text2,
     marginBottom: 32,
   },
   input: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
     marginBottom: 12,
   },
   inputFocused: {
-    borderColor: Colors.teal,
+    borderColor: '#0f766e',
   },
   passwordWrap: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -232,7 +288,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    color: Colors.text1,
   },
   eyeIcon: {
     fontSize: 18,
@@ -245,19 +300,16 @@ const styles = StyleSheet.create({
   forgotText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.teal,
   },
   errorText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.danger,
     marginBottom: 12,
     textAlign: 'center',
   },
   primaryBtn: {
     height: 52,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.teal,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -268,7 +320,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: FontFamily.display,
     fontSize: 16,
-    color: Colors.surface,
     letterSpacing: 0.2,
   },
   divider: {
@@ -280,19 +331,15 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
   },
   dividerLabel: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.text3,
   },
   outlinedBtn: {
     height: 52,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -302,12 +349,10 @@ const styles = StyleSheet.create({
   googleG: {
     fontFamily: FontFamily.displayXBold,
     fontSize: 16,
-    color: Colors.text1,
   },
   outlinedBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.text1,
   },
   footerRow: {
     alignItems: 'center',
@@ -315,25 +360,17 @@ const styles = StyleSheet.create({
   footerText: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    color: Colors.text2,
   },
-  footerLink: {
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.teal,
-  },
-  // DEV ONLY — remove before production
   devBypass: {
     alignItems: 'center',
     marginTop: 24,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderStyle: 'dashed',
     borderRadius: 10,
   },
   devBypassText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: Colors.text3,
   },
 });
