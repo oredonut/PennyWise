@@ -11,8 +11,6 @@
  *   Danger     Soft Red       #EF4444
  */
 
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
 // ---------------------------------------------------------------------------
@@ -97,10 +95,10 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export const Fonts = {
   /** Plus Jakarta Sans ExtraBold – headings, score display, wordmark */
   display: 'PlusJakartaSans_800ExtraBold',
-  /** DM Sans Regular – body text, UI labels */
-  body: 'DMSans_400Regular',
-  /** DM Sans Medium – monospaced fallback until DM Mono is installed */
-  mono: 'DMSans_500Medium',
+  /** Plus Jakarta Sans Regular – body text, UI labels */
+  body: 'PlusJakartaSans_400Regular',
+  /** JetBrains Mono – monospaced font for numbers and currency */
+  mono: 'JetBrainsMono_400Regular',
 } as const;
 
 // ---------------------------------------------------------------------------
