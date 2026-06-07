@@ -13,7 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '@/lib/supabase';
 import { Colors, Radius, FontFamily } from '@/tokens';
 
-type RootStackParamList = { Login: undefined; Register: undefined };
+type RootStackParamList = { Login: undefined; Register: undefined; Home: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> };
 
 export default function LoginScreen({ navigation }: Props) {
@@ -28,10 +28,22 @@ export default function LoginScreen({ navigation }: Props) {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+    // ── TODO (backend): uncomment the block below when Supabase is ready ──
+    // const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    // setLoading(false);
+    // if (authError) {
+    //   setError(authError.message);
+    //   return;
+    // }
+    // ──────────────────────────────────────────────────────────────────────
+
+    // DEV: skip auth, go straight to Home
     setLoading(false);
-    if (authError) setError(authError.message);
+    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   };
+
+  const goHomeNow = () => navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
 
   return (
     <KeyboardAvoidingView
@@ -127,6 +139,12 @@ export default function LoginScreen({ navigation }: Props) {
             <Text style={styles.footerLink}>Sign up</Text>
           </Text>
         </TouchableOpacity>
+
+        {/* ── DEV ONLY — remove before production ────────────────── */}
+        <TouchableOpacity onPress={goHomeNow} style={styles.devBypass}>
+          <Text style={styles.devBypassText}>⚡ Preview Home (dev bypass)</Text>
+        </TouchableOpacity>
+        {/* ─────────────────────────────────────────────────────────── */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -302,5 +320,20 @@ const styles = StyleSheet.create({
   footerLink: {
     fontFamily: FontFamily.bodySemiBold,
     color: Colors.teal,
+  },
+  // DEV ONLY — remove before production
+  devBypass: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    borderRadius: 10,
+  },
+  devBypassText: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    color: Colors.text3,
   },
 });

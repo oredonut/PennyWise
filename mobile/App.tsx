@@ -27,6 +27,7 @@ import { registerRootComponent } from 'expo';
 import { SplashScreen as PWSplashScreen } from './screens/auth/splashScreen';
 import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
+import HomeScreen     from './screens/home/HomeScreen';
 import { Colors }     from './constants/theme';
 
 // Keep the native splash visible until fonts are loaded
@@ -79,6 +80,10 @@ function App() {
 
             <Stack.Screen name="Login"    component={LoginScreen}    />
             <Stack.Screen name="Register" component={RegisterScreen} />
+
+            {/* ── App screens ────────────────────────────────── */}
+            {/* TODO (backend): gate this behind Supabase session check */}
+            <Stack.Screen name="Home" component={HomeScreen} />
           </Stack.Navigator>
         </NavigationContainer>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
