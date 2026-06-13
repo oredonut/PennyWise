@@ -17,7 +17,6 @@
 //   • JetBrains Mono only on "getting things ready..." label
 // ============================================================
 
-// @ts-nocheck
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -161,8 +160,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     outputRange: ['-10deg', '10deg'],
   });
 
-  /** Other elements: fade + slide-up + gentle scale */
-  const mkEntrance = (anim: Animated.Value) => ({
+  /** Other elements: fade + slide-up + gentle scale.
+   *  Return is `any` because RN's strict transform-union type rejects
+   *  hand-built [{translateY},{scale}] arrays even though they are valid. */
+  const mkEntrance = (anim: Animated.Value): any => ({
     opacity: anim,
     transform: [
       {

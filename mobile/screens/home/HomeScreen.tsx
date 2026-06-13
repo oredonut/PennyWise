@@ -15,7 +15,6 @@
 //   SCRIBBLE      — z=0, pointerEvents none, absent from bottom nav
 // ============================================================
 
-// @ts-nocheck
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -27,26 +26,14 @@ import { StatusBar } from 'expo-status-bar';
 
 import { ScribbleLayer } from '../../src/components/ScribbleLayer';
 import { useTheme }       from '../../lib/useTheme';
-import { FontFamily }     from '../../tokens';
+import { FontFamily, Colors } from '../../tokens';
+import { formatNaira as fmt } from '../../utils/currency';
+import { greeting, dateLabel } from '../../utils/date';
 import { MOCK_HOME_DATA, HomeData, CategoryBudget } from './mockData';
 import InsightsView       from './InsightsView';
 
-// AMBER RULE — defined once, touched only by score numbers
-const AMBER = '#d97706';
-
-// ── Helpers ───────────────────────────────────────────────────
-const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? 'Good morning,' : h < 17 ? 'Good afternoon,' : 'Good evening,';
-}
-
-function dateLabel() {
-  return new Date()
-    .toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })
-    .toUpperCase();
-}
+// AMBER RULE — sourced from the token, used ONLY on score + brokeScore numbers
+const AMBER = Colors.amber;
 
 // ── Card style factory ────────────────────────────────────────
 const mkCard = (tokens: any) => ({
@@ -451,6 +438,7 @@ function RecentTransactionsSection({ transactions, tokens, enterAnim }: any) {
 
 // ── Profile Settings View ─────────────────────────────────────
 function ProfileView({ tokens, themeMode, setThemeMode }: any) {
+  // TODO(api): GET /api/profile/budget — monthly spending cap (number, naira).
   const [budgetVal, setBudgetVal] = useState('25,000');
 
   const modes = [
@@ -459,6 +447,7 @@ function ProfileView({ tokens, themeMode, setThemeMode }: any) {
     { id: 'system', label: 'System Default', icon: '⚙️' },
   ];
 
+  // TODO(api): GET /api/profile/badges — discipline badges with locked/unlocked state.
   const badges = [
     { id: 'b1', name: 'Shawarma Slayer', emoji: '🍔', status: 'Unlocked', desc: 'Avoided food bankruptcy.' },
     { id: 'b2', name: 'Bolt Walker', emoji: '🚶‍♂️', status: 'Unlocked', desc: 'Walked instead of ride booking.' },
@@ -496,6 +485,7 @@ function ProfileView({ tokens, themeMode, setThemeMode }: any) {
           </View>
         </View>
 
+        {/* TODO(api): GET /api/profile — name, university, grade, memberSince. */}
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 18, color: tokens.text1, marginBottom: 2 }}>
             Tunde
@@ -510,6 +500,7 @@ function ProfileView({ tokens, themeMode, setThemeMode }: any) {
       </View>
 
       {/* ── 2. Streaks & Stats ── */}
+      {/* TODO(api): GET /api/profile/streaks — currentStreak & longestStreak (days). */}
       <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
         <View style={[mkCard(tokens), { flex: 1, alignItems: 'center', paddingVertical: 12, marginRight: 0 }]}>
           <Text style={{ fontSize: 20, marginBottom: 4 }}>🔥</Text>
@@ -782,11 +773,23 @@ export default function HomeScreen({ navigation }: any) {
   const { tokens, isDark, themeMode, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // TODO (backend): replace MOCK_HOME_DATA with real API call
+  // TODO(api): GET /api/home/dashboard — replace MOCK_HOME_DATA with the
+  // fetched HomeData (add loading / error / empty states before shipping).
   const data: HomeData = MOCK_HOME_DATA;
 
   const [activeTab,  setActiveTab]  = useState('home');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Bottom-nav handler. The centre FAB has no destination yet (Add Transaction
+  // screen is unbuilt) — guard against switching to a 'fab' tab that renders
+  // nothing, which would blank the screen.
+  const handleTab = useCallback((id: string) => {
+    if (id === 'fab') {
+      // TODO(nav): open AddTransactionScreen / quick-add bottom sheet.
+      return;
+    }
+    setActiveTab(id);
+  }, []);
 
   // Weekday selection
   const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -1008,7 +1011,7 @@ export default function HomeScreen({ navigation }: any) {
       {/* ── Bottom Nav (fixed) ───────────────────────────────── */}
       <BottomNav
         active={activeTab}
-        onPress={setActiveTab}
+        onPress={handleTab}
         tokens={tokens}
         insets={insets}
       />

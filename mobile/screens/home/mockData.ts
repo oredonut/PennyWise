@@ -100,6 +100,12 @@ export interface HomeData {
   insights: InsightsData;
 }
 
+// TODO(api): This entire object is placeholder data. It should come from:
+//   • user + disciplineScore + budget + alert + categories + recentTransactions
+//       → GET /api/home/dashboard      (returns HomeData minus `insights`)
+//   • insights.*                       → GET /api/insights?range=7d|30d
+//       (scoreTrend, breakdown, observations, comparison, roast)
+// Keep the HomeData/InsightsData types as the response contract — see API_CONTRACT.md.
 export const MOCK_HOME_DATA: HomeData = {
   user: {
     firstName: 'Tunde',

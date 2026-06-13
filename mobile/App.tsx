@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useCallback, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -28,7 +27,6 @@ import { SplashScreen as PWSplashScreen } from './screens/auth/splashScreen';
 import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
 import HomeScreen     from './screens/home/HomeScreen';
-import { Colors }     from './constants/theme';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});

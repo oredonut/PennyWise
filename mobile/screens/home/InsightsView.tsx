@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
-import { FontFamily } from '../../tokens';
+import { FontFamily, Colors } from '../../tokens';
 import { InsightsData, ScoreTrendPoint, CategoryBreakdownItem, ObservationItem } from './mockData';
-
-const AMBER = '#d97706';
-const GREEN = '#22c55e';
-const RED = '#ef4444';
-
-const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
-
 import { useTheme } from '../../lib/useTheme';
+import { formatNaira as fmt } from '../../utils/currency';
+
+// Discipline-Score amber is the only sanctioned amber (score-threshold colouring).
+const AMBER = Colors.amber;
 
 interface InsightsViewProps {
   data: InsightsData;
@@ -61,7 +58,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
   const getScoreColor = (score: number) => {
     if (score >= 60) return tokens.teal;
     if (score >= 30) return AMBER;
-    return RED;
+    return tokens.danger;
   };
 
   // Score Trend SVG Line Chart calculations
@@ -214,17 +211,6 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
               );
             })}
 
-            {/* Y-axis labels text */}
-            <Text
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-              }}
-            >
-              {/* Note: React Native Svg Text requires <Text> tag imports if inside Svg, but standard overlay is cleaner. We use SVG coordinates here. */}
-            </Text>
-
             {/* Custom SVG Text elements for Y axis (0, 25, 50, 75, 100) */}
             {[0, 25, 50, 75, 100].map((level, idx) => {
               const yVal = paddingTop + graphHeight - (level / 100) * graphHeight;
@@ -293,7 +279,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
             <Text style={[styles.legendText, { color: tokens.text2 }]}>30-59 Needs work</Text>
           </View>
           <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: RED }]} />
+            <View style={[styles.legendDot, { backgroundColor: tokens.danger }]} />
             <Text style={[styles.legendText, { color: tokens.text2 }]}>&lt; 30 Broke</Text>
           </View>
         </View>
@@ -422,11 +408,11 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
 
           {/* Change pill */}
           <View style={{ alignItems: 'center', paddingHorizontal: 10 }}>
-            <Text style={{ fontSize: 16, color: GREEN, marginBottom: 2 }}>↓</Text>
-            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: GREEN, fontWeight: '700' }}>
+            <Text style={{ fontSize: 16, color: tokens.success, marginBottom: 2 }}>↓</Text>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: tokens.success, fontWeight: '700' }}>
               {fmt(data.comparison.difference)}
             </Text>
-            <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: GREEN }}>
+            <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: tokens.success }}>
               {data.comparison.percentage}% less
             </Text>
           </View>

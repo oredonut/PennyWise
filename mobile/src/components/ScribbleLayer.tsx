@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';

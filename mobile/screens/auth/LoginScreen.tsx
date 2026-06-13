@@ -10,8 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { supabase } from '@/lib/supabase';
-import { Radius, FontFamily } from '@/tokens';
+import { supabase } from '../../lib/supabase';
+import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 
 type RootStackParamList = { Login: undefined; Register: undefined; Home: undefined };

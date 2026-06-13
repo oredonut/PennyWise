@@ -6,7 +6,6 @@
 // NOT JetBrains Mono. Mono is reserved for currency *amounts*.
 // ============================================================
 
-// @ts-nocheck
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';

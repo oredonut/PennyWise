@@ -35,3 +35,12 @@ Thumbs.db
 .turbo
 .cache/
 *.tsbuildinfo
+
+# AI working documents — local only
+AUDIT.md
+API_CONTRACT.md
+MIGRATION_NOTES.md
+HANDOFF.md
+DESIGN.md
+CLAUDE.md
+.claude/

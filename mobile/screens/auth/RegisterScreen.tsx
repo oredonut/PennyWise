@@ -13,8 +13,8 @@ import {
   Pressable,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { supabase } from '@/lib/supabase';
-import { Radius, FontFamily } from '@/tokens';
+import { supabase } from '../../lib/supabase';
+import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 
 type RootStackParamList = { Login: undefined; Register: undefined };
@@ -72,19 +72,25 @@ export default function RegisterScreen({ navigation }: Props) {
   const handleRegister = async () => {
     setError('');
     setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          university,
-          monthly_budget: parseFloat(monthlyBudget) || 0,
+    try {
+      const { error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            university,
+            monthly_budget: parseFloat(monthlyBudget) || 0,
+          },
         },
-      },
-    });
-    setLoading(false);
-    if (authError) setError(authError.message);
+      });
+      if (authError) setError(authError.message);
+    } catch (e: any) {
+      // Network / unexpected failure — surface instead of an unhandled rejection.
+      setError(e?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -542,6 +548,10 @@ const styles = StyleSheet.create({
   },
   footerRow: {
     alignItems: 'center',
+  },
+  footerText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
   },
   modalBackdrop: {
     flex: 1,

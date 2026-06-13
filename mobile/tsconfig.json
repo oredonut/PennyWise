@@ -5,8 +5,7 @@
     "noImplicitAny": false,
     "jsx": "react-native",
     "skipLibCheck": true,
-    "paths": { "@/*": ["./*"] },
-    "typeRoots": ["./node_modules/@types", "."]
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["**/*.ts", "**/*.tsx", "react-native.d.ts"]
 }
