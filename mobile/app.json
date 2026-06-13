@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "PennyWise",
+    "slug": "pennywise",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "scheme": "pennywise",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#faf7f2"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "sdkVersion": "54.0.0"
+  }
+}

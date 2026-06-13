@@ -1,0 +1,19 @@
+{
+  "name": "pennywise-root",
+  "private": true,
+  "workspaces": [
+    "pennywise",
+    "mobile"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=pennywise",
+    "dev:api": "npm run dev --workspace=pennywise",
+    "dev:app": "npm run start --workspace=mobile",
+    "build": "npm run build --workspace=pennywise",
+    "test": "npm run test --workspace=pennywise"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {
+    "react": "19.1.0"
+  }
+}

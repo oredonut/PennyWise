@@ -1,6 +1,6 @@
 -- BEFORE DEPLOY (required):
---   1. Replace <PROJECT_REF> in both URLs with your Supabase project ref
---      (pattern: https://<PROJECT_REF>.supabase.co/functions/v1/<function-name>).
+--   1. Replace sluhumgsvmcbbbrjcrzt in both URLs with your Supabase project ref
+--      (pattern: https://sluhumgsvmcbbbrjcrzt.supabase.co/functions/v1/<function-name>).
 --   2. Replace the Authorization value: either
 --        - store the service role key in Supabase Vault (recommended), e.g.
 --            select vault.create_secret('<your-service-role-key>', 'service_role_key');
@@ -44,12 +44,12 @@ SELECT
     $cron$
     SELECT
       net.http_post (
-        url := 'https://<PROJECT_REF>.supabase.co/functions/v1/fire-recurring',
+        url := 'https://sluhumgsvmcbbbrjcrzt.supabase.co/functions/v1/fire-recurring',
         headers := jsonb_build_object (
           'Content-Type',
           'application/json',
           'Authorization',
-          'Bearer <SERVICE_ROLE_KEY>'
+          'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
         ),
         body := '{}'::jsonb
       ) AS request_id;
@@ -62,12 +62,12 @@ SELECT
     $cron$
     SELECT
       net.http_post (
-        url := 'https://<PROJECT_REF>.supabase.co/functions/v1/compute-daily-score',
+        url := 'https://sluhumgsvmcbbbrjcrzt.supabase.co/functions/v1/compute-daily-score',
         headers := jsonb_build_object (
           'Content-Type',
           'application/json',
           'Authorization',
-          'Bearer <SERVICE_ROLE_KEY>'
+          'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
         ),
         body := '{}'::jsonb
       ) AS request_id;
