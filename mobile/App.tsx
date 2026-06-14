@@ -26,7 +26,8 @@ import { registerRootComponent } from 'expo';
 import { SplashScreen as PWSplashScreen } from './screens/auth/splashScreen';
 import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
-import HomeScreen     from './screens/home/HomeScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
+import MainTabs        from './navigation/MainTabs';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -60,10 +61,11 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
 
           <Stack.Screen name="Login"    component={LoginScreen}    />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
 
-          {/* ── App screens ────────────────────────────────── */}
+          {/* ── App (bottom tabs) ──────────────────────────── */}
           {/* TODO (backend): gate this behind Supabase session check */}
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style={isDark ? 'light' : 'dark'} />

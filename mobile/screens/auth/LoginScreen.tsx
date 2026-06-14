@@ -14,7 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 
-type RootStackParamList = { Login: undefined; Register: undefined; Home: undefined };
+type RootStackParamList = { Login: undefined; Register: undefined; MainTabs: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> };
 
 export default function LoginScreen({ navigation }: Props) {
@@ -42,10 +42,10 @@ export default function LoginScreen({ navigation }: Props) {
 
     // DEV: skip auth, go straight to Home
     setLoading(false);
-    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
 
-  const goHomeNow = () => navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+  const goHomeNow = () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
 
   return (
     <KeyboardAvoidingView
