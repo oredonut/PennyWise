@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUtcMonthRange } from '@/lib/time'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -35,11 +37,6 @@ type CreateCategoryBody = {
   color?: unknown
 }
 
-function toFiniteNumber(value: unknown): number | null {
-  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN
-  return Number.isFinite(parsed) ? parsed : null
-}
-
 function buildCategoryResponse(
   category: CategoryRow,
   spentThisMonth: number
@@ -58,8 +55,11 @@ function buildCategoryResponse(
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -109,6 +109,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -123,12 +126,12 @@ export async function POST(request: NextRequest) {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    const name = typeof body.name === 'string' ? body.name.trim() : ''
-    const monthlyBudget = toFiniteNumber(body.monthly_budget)
-    const color = typeof body.color === 'string' && body.color.trim().length > 0 ? body.color.trim() : null
+    const name = validate.string(body.name, 100)
+    const monthlyBudget = validate.number(body.monthly_budget)
+    const color = validate.string(body.color, 50)
 
-    if (!name || monthlyBudget === null || monthlyBudget < 0) {
-      return err('name and monthly_budget are required', 'invalid_input', 400)
+    if (!name || monthlyBudget === null) {
+      return err('name and a non-negative monthly_budget are required', 'invalid_input', 400)
     }
 
     const { data, error: insertError } = await supabase

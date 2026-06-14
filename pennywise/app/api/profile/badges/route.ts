@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -10,8 +11,11 @@ type Badge = { id: string; name: string; emoji: string; status: BadgeStatus; des
 
 const unlock = (condition: boolean): BadgeStatus => (condition ? 'Unlocked' : 'Locked')
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },

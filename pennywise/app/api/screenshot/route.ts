@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -13,6 +14,9 @@ interface ExtractedTransaction {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },

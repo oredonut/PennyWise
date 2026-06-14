@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { recomputeScoreAndStreak } from '@/lib/recompute'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 import { categoryEmoji, relativeTime, transactionType } from '@/lib/format'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
@@ -78,6 +80,9 @@ function toTransactionVM(row: TxnRow, categoryName: string | null, now: Date): T
 
 export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -145,6 +150,9 @@ interface TransactionBody {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -159,11 +167,14 @@ export async function POST(request: NextRequest) {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    if (!body.categoryId || typeof body.amount !== 'number' || !Number.isFinite(body.amount)) {
-      return err('categoryId and a numeric amount are required', 'invalid_input', 400)
+    const categoryId = validate.string(body.categoryId, 100)
+    const amount = validate.number(body.amount)
+    if (!categoryId || amount === null || amount <= 0) {
+      return err('categoryId and a positive numeric amount are required', 'invalid_input', 400)
     }
 
-    const name = typeof body.name === 'string' && body.name.trim().length > 0 ? body.name.trim() : null
+    // Optional merchant name; over-length is dropped to null (never stored).
+    const name = validate.string(body.name, 100)
 
     // occurredAt → created_at. Only override the DB default when a valid date is sent.
     let createdAt: string | null = null
@@ -179,8 +190,8 @@ export async function POST(request: NextRequest) {
     // column. Until then type is inferred from the category name on read.
     const baseInsert = {
       user_id: user.id,
-      category_id: body.categoryId,
-      amount: String(body.amount),
+      category_id: categoryId,
+      amount: String(amount),
       merchant_raw: name,
       source: 'manual' as const,
     }

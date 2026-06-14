@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -7,8 +9,11 @@ const err = (error: string, code: string, status: number) =>
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
     const {
@@ -42,6 +47,9 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
     const {
@@ -58,8 +66,24 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const update: { note?: string | null; category_id?: string | null } = {}
-    if ('note' in body) update.note = body.note ?? null
-    if ('category_id' in body) update.category_id = body.category_id ?? null
+    if ('note' in body) {
+      if (body.note == null || (typeof body.note === 'string' && body.note.trim() === '')) {
+        update.note = null
+      } else {
+        const note = validate.string(body.note, 500)
+        if (note === null) return err('note must be at most 500 characters', 'invalid_input', 400)
+        update.note = note
+      }
+    }
+    if ('category_id' in body) {
+      if (body.category_id == null) {
+        update.category_id = null
+      } else {
+        const cat = validate.string(body.category_id, 100)
+        if (!cat) return err('category_id must be a non-empty string', 'invalid_input', 400)
+        update.category_id = cat
+      }
+    }
 
     if (Object.keys(update).length === 0) {
       return err('Nothing to update — provide note or category_id', 'invalid_input', 400)
@@ -84,8 +108,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
     const {

@@ -1,12 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
   NextResponse.json({ error, code }, { status })
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -36,6 +41,9 @@ interface BudgetBody {
 
 export async function PUT(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -50,14 +58,8 @@ export async function PUT(request: NextRequest) {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    const monthlyBudget =
-      typeof body.monthlyBudget === 'number'
-        ? body.monthlyBudget
-        : typeof body.monthlyBudget === 'string'
-          ? Number(body.monthlyBudget)
-          : Number.NaN
-
-    if (!Number.isFinite(monthlyBudget) || monthlyBudget <= 0) {
+    const monthlyBudget = validate.number(body.monthlyBudget)
+    if (monthlyBudget === null || monthlyBudget <= 0) {
       return err('monthlyBudget must be a positive number', 'invalid_input', 400)
     }
 

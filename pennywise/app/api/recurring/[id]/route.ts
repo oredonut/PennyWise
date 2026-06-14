@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 import { toRuleVM, type RuleRow } from '../route'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
@@ -22,6 +24,9 @@ interface PatchRuleBody {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
     const {
@@ -39,22 +44,33 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     // Build the update from only the provided fields.
     const update: { category_id?: string; amount?: string; note?: string | null; frequency?: Frequency } = {}
-    if ('categoryId' in body && typeof body.categoryId === 'string') update.category_id = body.categoryId
+    if ('categoryId' in body) {
+      const cat = validate.string(body.categoryId, 100)
+      if (!cat) return err('categoryId must be a non-empty string', 'invalid_input', 400)
+      update.category_id = cat
+    }
     if ('amount' in body) {
-      if (typeof body.amount !== 'number' || !Number.isFinite(body.amount)) {
-        return err('amount must be a number', 'invalid_input', 400)
+      const amount = validate.number(body.amount)
+      if (amount === null || amount <= 0) {
+        return err('amount must be a positive number', 'invalid_input', 400)
       }
-      update.amount = String(body.amount)
+      update.amount = String(amount)
     }
     if ('note' in body) {
-      update.note =
-        typeof body.note === 'string' && body.note.trim().length > 0 ? body.note.trim() : null
+      if (body.note == null || (typeof body.note === 'string' && body.note.trim() === '')) {
+        update.note = null
+      } else {
+        const note = validate.string(body.note, 500)
+        if (note === null) return err('note must be at most 500 characters', 'invalid_input', 400)
+        update.note = note
+      }
     }
     if ('frequency' in body) {
-      if (!FREQUENCIES.includes(body.frequency as Frequency)) {
+      const frequency = validate.enum(body.frequency, [...FREQUENCIES])
+      if (!frequency) {
         return err("frequency must be 'weekly' or 'monthly'", 'invalid_input', 400)
       }
-      update.frequency = body.frequency as Frequency
+      update.frequency = frequency
     }
 
     if (Object.keys(update).length === 0) {
@@ -82,8 +98,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
     const {

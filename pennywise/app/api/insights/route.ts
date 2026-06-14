@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
 import { getMonthKey } from '@/lib/time'
 import { generateRoast, gradeFromScore } from '@/lib/roast'
 import { dayAbbrUTC, monthName } from '@/lib/format'
@@ -20,6 +21,9 @@ function num(value: string | null | undefined): number {
 
 export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },

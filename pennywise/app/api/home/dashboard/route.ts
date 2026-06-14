@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
 import { computeDisciplineScore } from '@/lib/score'
 import { getUtcMonthRange } from '@/lib/time'
 import {
@@ -43,8 +44,11 @@ function badgeFromScore(score: number): string {
   return 'Starting Fresh'
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },

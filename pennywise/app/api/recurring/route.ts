@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
   NextResponse.json({ error, code }, { status })
 
 const FREQUENCIES = ['weekly', 'monthly'] as const
-type Frequency = (typeof FREQUENCIES)[number]
 
 // Embedded categories(name) isn't in the generated relation types, so reads are
 // cast via unknown; the relation resolves at runtime through PostgREST.
@@ -48,8 +49,11 @@ export function tomorrowUtcIso(now: Date = new Date()): string {
 
 const RULE_SELECT = 'id, category_id, amount, note, frequency, next_fire_at, categories(name)'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -81,6 +85,9 @@ interface CreateRuleBody {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -95,10 +102,13 @@ export async function POST(request: NextRequest) {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    if (!body.categoryId || typeof body.amount !== 'number' || !Number.isFinite(body.amount)) {
-      return err('categoryId and a numeric amount are required', 'invalid_input', 400)
+    const categoryId = validate.string(body.categoryId, 100)
+    const amount = validate.number(body.amount)
+    const frequency = validate.enum(body.frequency, [...FREQUENCIES])
+    if (!categoryId || amount === null || amount <= 0) {
+      return err('categoryId and a positive numeric amount are required', 'invalid_input', 400)
     }
-    if (!FREQUENCIES.includes(body.frequency as Frequency)) {
+    if (!frequency) {
       return err("frequency must be 'weekly' or 'monthly'", 'invalid_input', 400)
     }
 
@@ -106,10 +116,10 @@ export async function POST(request: NextRequest) {
       .from('recurring_rules')
       .insert({
         user_id: user.id,
-        category_id: body.categoryId,
-        amount: String(body.amount),
-        note: typeof body.note === 'string' && body.note.trim().length > 0 ? body.note.trim() : null,
-        frequency: body.frequency as Frequency,
+        category_id: categoryId,
+        amount: String(amount),
+        note: validate.string(body.note, 500),
+        frequency,
         next_fire_at: tomorrowUtcIso(),
       })
       .select(RULE_SELECT)

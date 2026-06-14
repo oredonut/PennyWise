@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { recomputeScoreAndStreak } from '@/lib/recompute'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -32,6 +34,9 @@ type InsertRow = {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -55,20 +60,21 @@ export async function POST(request: NextRequest) {
     const rows: InsertRow[] = []
     for (let i = 0; i < items.length; i++) {
       const item = items[i]
-      if (!item || !item.categoryId || typeof item.amount !== 'number' || !Number.isFinite(item.amount)) {
-        return err(`item ${i}: categoryId and a numeric amount are required`, 'invalid_input', 400)
+      if (!item) return err(`item ${i}: missing`, 'invalid_input', 400)
+
+      const categoryId = validate.string(item.categoryId, 100)
+      const amount = validate.number(item.amount)
+      if (!categoryId || amount === null || amount <= 0) {
+        return err(`item ${i}: categoryId and a positive numeric amount are required`, 'invalid_input', 400)
       }
 
-      // Prefer an explicit merchant_raw, fall back to name, else null.
-      const merchant =
-        (typeof item.merchant_raw === 'string' && item.merchant_raw.trim()) ||
-        (typeof item.name === 'string' && item.name.trim()) ||
-        null
+      // Prefer an explicit merchant_raw, fall back to name; over-length → null.
+      const merchant = validate.string(item.merchant_raw, 100) ?? validate.string(item.name, 100)
 
       const row: InsertRow = {
         user_id: user.id,
-        category_id: item.categoryId,
-        amount: String(item.amount),
+        category_id: categoryId,
+        amount: String(amount),
         merchant_raw: merchant,
         source: 'manual',
       }

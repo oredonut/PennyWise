@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyRateLimit } from '@/lib/withRateLimit'
+import { validate } from '@/lib/validate'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -11,6 +13,9 @@ interface PushTokenBody {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = applyRateLimit(request, 'standard')
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -25,8 +30,8 @@ export async function POST(request: NextRequest) {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    const token = typeof body.token === 'string' ? body.token.trim() : ''
-    if (!token) return err('token must be a non-empty string', 'invalid_input', 400)
+    const token = validate.string(body.token, 500)
+    if (!token) return err('token must be a non-empty string (max 500 chars)', 'invalid_input', 400)
 
     const { error: updateError } = await supabase
       .from('users')
