@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { useCallback, useEffect, useState } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -29,22 +29,64 @@ import RegisterScreen from './screens/auth/RegisterScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
+import * as Notifications from 'expo-notifications';
+import { apiPost } from './hooks/useApi';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
 
+// Foreground notification presentation.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    // Required by expo-notifications (SDK 54) — replaces shouldShowAlert.
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+// Ref so the notification-tap handler can navigate from outside React.
+const navigationRef = createNavigationContainerRef();
+
 import { ThemeProvider, useTheme } from './lib/useTheme';
 
 function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () => Promise<void>; fontsLoaded: boolean }) {
   const { tokens, isDark } = useTheme();
 
+  useEffect(() => {
+    // Ask for permission on first launch, then register the Expo push token.
+    (async () => {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status === 'granted') {
+          const token = await Notifications.getExpoPushTokenAsync();
+          await apiPost('/api/push-token', { token: token.data });
+        }
+      } catch {
+        // Best-effort (e.g. no session yet, or running in Expo Go) — never fatal.
+      }
+    })();
+
+    // Deep-link notification taps to the relevant tab.
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { route?: string };
+      if (data?.route === 'Insights' && navigationRef.isReady()) {
+        // Nested navigate into the tab navigator (untyped ref → cast).
+        (navigationRef as any).navigate('MainTabs', { screen: 'InsightsTab' });
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
   if (!fontsLoaded) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg }} onLayout={onLayoutRootView}>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator
           initialRouteName="Splash"
           screenOptions={{ headerShown: false, animation: 'fade' }}

@@ -1,16 +1,27 @@
 import { computeDisciplineScore } from './compute'
+import { sendPush } from '@/lib/push'
 import type { createClient } from '@/lib/supabase/server'
 
 type DbClient = Awaited<ReturnType<typeof createClient>>
 
-export async function recomputeTodayScore(supabase: DbClient, userId: string): Promise<void> {
+/**
+ * Recompute today's discipline score and upsert the daily log. Optionally pass
+ * the amounts just added per category (keyed by category id) so we can detect a
+ * category crossing the 75% budget threshold on THIS write and fire a one-time
+ * push alert.
+ */
+export async function recomputeTodayScore(
+  supabase: DbClient,
+  userId: string,
+  addedByCategory: Record<string, number> = {},
+): Promise<void> {
   const today = new Date().toISOString().slice(0, 10)
   const monthStart = `${today.slice(0, 7)}-01T00:00:00Z`
 
   const [{ data: cats }, { data: txns }, { data: streak }] = await Promise.all([
     supabase
       .from('categories')
-      .select('id, monthly_budget')
+      .select('id, name, monthly_budget')
       .eq('user_id', userId),
     supabase
       .from('transactions')
@@ -61,4 +72,39 @@ export async function recomputeTodayScore(supabase: DbClient, userId: string): P
     },
     { onConflict: 'user_id,date' },
   )
+
+  // ── Budget alert: notify when a category crosses 75% on this write ──
+  // Best-effort — an alert failure must never affect the score recompute.
+  try {
+    const crossed = cats.filter((c) => {
+      const budget = parseFloat(c.monthly_budget)
+      if (!(budget > 0)) return false
+      const newSpent = spentByCategory.get(c.id) ?? 0
+      const oldSpent = newSpent - (addedByCategory[c.id] ?? 0)
+      const newPct = (newSpent / budget) * 100
+      const oldPct = (oldSpent / budget) * 100
+      return newPct >= 75 && newPct < 100 && oldPct < 75
+    })
+
+    if (crossed.length > 0) {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('push_token')
+        .eq('id', userId)
+        .maybeSingle()
+      const token = userRow?.push_token
+      if (token) {
+        for (const c of crossed) {
+          await sendPush(
+            token,
+            'Budget alert 🚨',
+            `You've used 75% of your ${c.name} budget`,
+            { route: 'Insights' },
+          )
+        }
+      }
+    }
+  } catch {
+    // ignore — alerts are best-effort
+  }
 }

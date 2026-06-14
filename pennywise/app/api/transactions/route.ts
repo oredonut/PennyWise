@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (insertError) return err(insertError.message, 'db_error', 500)
 
     // Fire-and-forget — don't block the POST response on score recompute
-    recomputeTodayScore(supabase, user.id).catch(() => {})
+    recomputeTodayScore(supabase, user.id, { [body.category_id]: body.amount }).catch(() => {})
 
     return ok(data)
   } catch (e) {
