@@ -28,6 +28,7 @@ import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import MainTabs        from './navigation/MainTabs';
+import AddTransactionScreen from './screens/AddTransactionScreen';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -66,6 +67,13 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
           {/* ── App (bottom tabs) ──────────────────────────── */}
           {/* TODO (backend): gate this behind Supabase session check */}
           <Stack.Screen name="MainTabs" component={MainTabs} />
+
+          {/* Add Transaction — transparent modal with a custom slide-up sheet */}
+          <Stack.Screen
+            name="AddTransaction"
+            component={AddTransactionScreen}
+            options={{ presentation: 'transparentModal', animation: 'fade' }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style={isDark ? 'light' : 'dark'} />

@@ -9,7 +9,7 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  RefreshControl, Animated, Easing,
+  RefreshControl, Animated, Easing, DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -350,6 +350,12 @@ export default function HomeTab() {
     opacity: cardAnims[i],
     transform: [{ translateY: cardAnims[i].interpolate({ inputRange: [0, 1], outputRange: [28, 0] }) }],
   });
+
+  // Refresh the dashboard whenever a transaction is logged from the Add sheet.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('transactionAdded', () => refetch());
+    return () => sub.remove();
+  }, [refetch]);
 
   const onRefresh = useCallback(() => refetch(), [refetch]);
 

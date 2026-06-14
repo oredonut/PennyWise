@@ -5,7 +5,7 @@
 // ============================================================
 
 import React from 'react';
-import { Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 import HomeTab from '../screens/tabs/HomeTab';
@@ -17,9 +17,9 @@ import BottomTabBar from '../src/components/BottomTabBar';
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
+  const navigation = useNavigation<any>();
   const handleFabPress = () => {
-    // TODO(2E): open the Add Transaction screen / quick-add bottom sheet.
-    Alert.alert('Coming soon');
+    navigation.navigate('AddTransaction');
   };
 
   return (
