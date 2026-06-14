@@ -1,17 +1,11 @@
 // ============================================================
-// Lightweight toast bus. `showToast` can be called from anywhere
-// (even outside React, e.g. inside an async submit handler); the
-// <ToastHost> mounted at the app root renders the message.
-//
-// Built on DeviceEventEmitter — the same cross-component channel the
-// app already uses for 'transactionAdded' — so no toast dependency is
-// pulled in and it works identically on iOS and Android.
+// Back-compat shim. The canonical toast lives in src/components/Toast.tsx
+// (imperative, typed, single viewport). Existing callers import
+// `showToast` from here; it forwards to Toast.show as an 'info' toast.
 // ============================================================
 
-import { DeviceEventEmitter } from 'react-native';
-
-export const TOAST_EVENT = 'pennywise:toast';
+import { Toast } from '../src/components/Toast';
 
 export function showToast(message: string): void {
-  DeviceEventEmitter.emit(TOAST_EVENT, message);
+  Toast.show(message, 'info');
 }

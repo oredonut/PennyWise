@@ -13,6 +13,7 @@ import InsightsTab from '../screens/tabs/InsightsTab';
 import HistoryTab from '../screens/tabs/HistoryTab';
 import ProfileTab from '../screens/tabs/ProfileTab';
 import BottomTabBar from '../src/components/BottomTabBar';
+import ErrorBoundary from '../src/components/ErrorBoundary';
 
 const Tab = createBottomTabNavigator();
 
@@ -30,10 +31,19 @@ export default function MainTabs() {
       screenOptions={{ headerShown: false }}
       tabBar={(props: BottomTabBarProps) => <BottomTabBar {...props} onFabPress={handleFabPress} />}
     >
-      <Tab.Screen name="HomeTab" component={HomeTab} />
-      <Tab.Screen name="InsightsTab" component={InsightsTab} />
-      <Tab.Screen name="HistoryTab" component={HistoryTab} />
-      <Tab.Screen name="ProfileTab" component={ProfileTab} />
+      {/* Each tab is isolated so a crash in one can't white-screen the app. */}
+      <Tab.Screen name="HomeTab">
+        {() => <ErrorBoundary key="home"><HomeTab /></ErrorBoundary>}
+      </Tab.Screen>
+      <Tab.Screen name="InsightsTab">
+        {() => <ErrorBoundary key="insights"><InsightsTab /></ErrorBoundary>}
+      </Tab.Screen>
+      <Tab.Screen name="HistoryTab">
+        {() => <ErrorBoundary key="history"><HistoryTab /></ErrorBoundary>}
+      </Tab.Screen>
+      <Tab.Screen name="ProfileTab">
+        {() => <ErrorBoundary key="profile"><ProfileTab /></ErrorBoundary>}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

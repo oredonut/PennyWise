@@ -32,7 +32,8 @@ import AddTransactionScreen from './screens/AddTransactionScreen';
 import * as Notifications from 'expo-notifications';
 import { apiPost } from './hooks/useApi';
 import { useNetworkSync } from './lib/netInfo';
-import ToastHost from './src/components/ToastHost';
+import { ToastViewport, Toast } from './src/components/Toast';
+import { supabase } from './lib/supabase';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -61,6 +62,34 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
 
   // Drain the offline transaction queue whenever connectivity returns.
   useNetworkSync();
+
+  // Catch otherwise-unhandled JS errors so the user gets a toast instead of
+  // a silent failure (or, for fatals, the default red-box in dev). We chain
+  // the previous handler so React Native's default reporting still runs.
+  useEffect(() => {
+    const errorUtils = (globalThis as any).ErrorUtils;
+    if (!errorUtils?.setGlobalHandler) return;
+    const previous = errorUtils.getGlobalHandler?.();
+    errorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      console.error('Global error:', error);
+      if (!isFatal) Toast.show(error?.message ?? 'Something went wrong', 'error');
+      previous?.(error, isFatal);
+    });
+    return () => {
+      if (previous) errorUtils.setGlobalHandler(previous);
+    };
+  }, []);
+
+  // Session expiry: useApi signs the user out on a persistent 401. React to
+  // that here by resetting navigation back to the auth flow.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && navigationRef.isReady()) {
+        (navigationRef as any).reset({ index: 0, routes: [{ name: 'Login' }] });
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     // Ask for permission on first launch, then register the Expo push token.
@@ -123,7 +152,7 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
           />
         </Stack.Navigator>
       </NavigationContainer>
-      <ToastHost />
+      <ToastViewport />
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </View>
   );

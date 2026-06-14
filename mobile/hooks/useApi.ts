@@ -39,29 +39,49 @@ async function getToken(): Promise<string> {
 
 const BASE = process.env.EXPO_PUBLIC_API_URL ?? '';
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const token = await getToken();
-  const res = await fetch(BASE + path, {
-    headers: { Authorization: 'Bearer ' + token },
+type RequestSpec = { method: string; body?: string; headers?: Record<string, string> };
+
+function authedFetch(path: string, spec: RequestSpec, token: string) {
+  return fetch(BASE + path, {
+    method: spec.method,
+    headers: { ...(spec.headers ?? {}), Authorization: 'Bearer ' + token },
+    body: spec.body,
   });
+}
+
+// Shared request path with transparent session recovery: on a 401 we
+// refresh the Supabase session and retry once; if it's still 401 the
+// session is unrecoverable, so we sign out (App.tsx's auth listener then
+// routes back to Login).
+async function request<T>(path: string, spec: RequestSpec): Promise<T> {
+  const token = await getToken();
+  let res = await authedFetch(path, spec, token);
+
+  if (res.status === 401) {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (!error && data.session) {
+      res = await authedFetch(path, spec, data.session.access_token);
+    }
+    if (res.status === 401) {
+      await supabase.auth.signOut();
+    }
+  }
+
   const json = await res.json();
   if (!res.ok) throw new ApiError(json.error ?? 'Request failed', res.status);
   return (json.data ?? json) as T;
 }
 
+export async function apiGet<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'GET' });
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const token = await getToken();
-  const res = await fetch(BASE + path, {
+  return request<T>(path, {
     method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + token,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok) throw new ApiError(json.error ?? 'Request failed', res.status);
-  return (json.data ?? json) as T;
 }
 
 // ── Generic resource hook ────────────────────────────────────
