@@ -13,11 +13,13 @@ import {
   Pressable,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
 import { supabase } from '../../lib/supabase';
+import { apiPost } from '../../hooks/useApi';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 
-type RootStackParamList = { Login: undefined; Register: undefined };
+type RootStackParamList = { Login: undefined; Register: undefined; Home: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Register'> };
 
 const UNIVERSITIES = [
@@ -69,11 +71,21 @@ export default function RegisterScreen({ navigation }: Props) {
   const strength = getStrength(password);
   const color = strengthColor(strength, tokens);
 
+  const registerPushToken = async () => {
+    // Push-token registration must never block sign-up — swallow all errors.
+    try {
+      const token = await Notifications.getExpoPushTokenAsync();
+      await apiPost('/api/push-token', { token: token.data });
+    } catch {
+      // ignore: notifications are optional; sign-up proceeds regardless
+    }
+  };
+
   const handleRegister = async () => {
     setError('');
     setLoading(true);
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -84,7 +96,17 @@ export default function RegisterScreen({ navigation }: Props) {
           },
         },
       });
-      if (authError) setError(authError.message);
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      // Email confirmation is off, so a session should be present immediately.
+      if (data.session) {
+        await registerPushToken();
+        // TODO(nav): route to 'Onboarding' once that screen exists (2D);
+        // until then land the new user on Home.
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      }
     } catch (e: any) {
       // Network / unexpected failure — surface instead of an unhandled rejection.
       setError(e?.message ?? 'Something went wrong. Please try again.');

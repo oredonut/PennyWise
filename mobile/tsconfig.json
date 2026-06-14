@@ -7,5 +7,6 @@
     "skipLibCheck": true,
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "react-native.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "react-native.d.ts"],
+  "exclude": ["node_modules", "**/__tests__/**"]
 }

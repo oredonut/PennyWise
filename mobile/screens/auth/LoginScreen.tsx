@@ -30,22 +30,19 @@ export default function LoginScreen({ navigation }: Props) {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-
-    // ── TODO (backend): uncomment the block below when Supabase is ready ──
-    // const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    // setLoading(false);
-    // if (authError) {
-    //   setError(authError.message);
-    //   return;
-    // }
-    // ──────────────────────────────────────────────────────────────────────
-
-    // DEV: skip auth, go straight to Home
-    setLoading(false);
-    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const goHomeNow = () => navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
 
   return (
     <KeyboardAvoidingView
@@ -203,17 +200,6 @@ export default function LoginScreen({ navigation }: Props) {
             <Text style={{ fontFamily: FontFamily.bodySemiBold, color: tokens.teal }}>Sign up</Text>
           </Text>
         </TouchableOpacity>
-
-        {/* ── DEV ONLY — remove before production ────────────────── */}
-        <TouchableOpacity
-          onPress={goHomeNow}
-          style={[styles.devBypass, { borderColor: tokens.border }]}
-        >
-          <Text style={[styles.devBypassText, { color: tokens.text3 }]}>
-            ⚡ Preview Home (dev bypass)
-          </Text>
-        </TouchableOpacity>
-        {/* ─────────────────────────────────────────────────────────── */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
