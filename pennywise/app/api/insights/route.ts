@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     const breakdown = categoryRows.map((c) => {
       const amount = categoryTotals.get(c.id) ?? 0
       const percentage = currentMonthTotal > 0 ? Math.round((amount / currentMonthTotal) * 100) : 0
-      return { id: c.id, name: c.name, percentage, amount, color: c.color }
+      return { id: c.id, name: c.name, percentage, amount, color: c.color ?? '#888780' }
     })
 
     // ── Score trends (both windows always returned) ──────────────
