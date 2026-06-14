@@ -31,6 +31,8 @@ import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
 import * as Notifications from 'expo-notifications';
 import { apiPost } from './hooks/useApi';
+import { useNetworkSync } from './lib/netInfo';
+import ToastHost from './src/components/ToastHost';
 
 // Keep the native splash visible until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -56,6 +58,9 @@ import { ThemeProvider, useTheme } from './lib/useTheme';
 
 function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () => Promise<void>; fontsLoaded: boolean }) {
   const { tokens, isDark } = useTheme();
+
+  // Drain the offline transaction queue whenever connectivity returns.
+  useNetworkSync();
 
   useEffect(() => {
     // Ask for permission on first launch, then register the Expo push token.
@@ -118,6 +123,7 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
           />
         </Stack.Navigator>
       </NavigationContainer>
+      <ToastHost />
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </View>
   );

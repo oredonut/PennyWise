@@ -4,14 +4,15 @@
 // is NOT a tab; it calls props.onFabPress (passed by the navigator).
 // ============================================================
 
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, DeviceEventEmitter } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 import { useTheme } from '../../lib/useTheme';
 import { FontFamily } from '../../tokens';
+import { getQueue, QUEUE_CHANGED_EVENT } from '../../lib/offlineQueue';
 
 const ICONS = {
   home:     'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
@@ -36,6 +37,17 @@ export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index]?.name;
+
+  // Pending offline-transaction count → red badge on the FAB. Seeded on
+  // mount and kept live via the queue's change event (enqueue / flush).
+  const [pendingCount, setPendingCount] = useState(0);
+  useEffect(() => {
+    getQueue().then((q) => setPendingCount(q.length));
+    const sub = DeviceEventEmitter.addListener(QUEUE_CHANGED_EVENT, (len: number) =>
+      setPendingCount(len)
+    );
+    return () => sub.remove();
+  }, []);
 
   const renderTab = (tab: TabDef) => {
     const isActive = activeRoute === tab.route;
@@ -110,6 +122,30 @@ export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
           <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
             <Path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
           </Svg>
+
+          {/* Pending offline transactions waiting to sync */}
+          {pendingCount > 0 ? (
+            <View
+              style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                minWidth: 20,
+                height: 20,
+                borderRadius: 10,
+                paddingHorizontal: 5,
+                backgroundColor: tokens.danger,
+                borderWidth: 2,
+                borderColor: tokens.surface,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' }}>
+                {pendingCount > 9 ? '9+' : pendingCount}
+              </Text>
+            </View>
+          ) : null}
         </TouchableOpacity>
       </View>
 

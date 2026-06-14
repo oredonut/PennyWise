@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/useTheme';
 import { FontFamily, Radius } from '../tokens';
 import { apiGet, apiPost } from '../hooks/useApi';
+import { enqueue, isNetworkError } from '../lib/offlineQueue';
+import { showToast } from '../lib/toast';
 import { SkeletonBox, usePulse } from '../src/components/states';
 
 type ApiCategory = { id: string; name: string; color?: string | null };
@@ -116,31 +118,51 @@ export default function AddTransactionScreen({ navigation }: any) {
     if (!selectedCategory || amount <= 0) return;
     setSubmitting(true);
     setSubmitError(null);
-    try {
-      const result = await apiPost<SubmitResult>('/api/transactions', {
-        name: merchant.trim() || selectedCategory.name,
-        amount,
-        type: activeType,
-        categoryId: selectedCategory.id,
-        occurredAt: selectedDate.toISOString(),
-      });
 
-      if (recurring) {
+    const payload = {
+      name: merchant.trim() || selectedCategory.name,
+      amount,
+      type: activeType,
+      categoryId: selectedCategory.id,
+      occurredAt: selectedDate.toISOString(),
+    };
+
+    let result: SubmitResult;
+    try {
+      result = await apiPost<SubmitResult>('/api/transactions', payload);
+    } catch (e) {
+      // Offline (the request never reached the server): stash it and let
+      // useNetworkSync replay it later. Anything else is a real error.
+      if (isNetworkError(e)) {
+        await enqueue(payload);
+        showToast("Saved offline — will sync when you're back online");
+        close();
+      } else {
+        setSubmitError(e instanceof Error ? e.message : 'Could not log transaction');
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // ── Success flow ──────────────────────────────────────────
+    // Recurring is best-effort; a failure here must not re-queue the
+    // (already-saved) transaction.
+    if (recurring) {
+      try {
         await apiPost('/api/recurring', {
           categoryId: selectedCategory.id,
           amount,
           note: merchant,
           frequency: recurringFrequency,
         });
+      } catch {
+        // Ignore — the transaction itself succeeded.
       }
-
-      // Signal the dashboard to refresh (carries fresh score/brokeScore/streak).
-      DeviceEventEmitter.emit('transactionAdded', result);
-      close();
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Could not log transaction');
-      setSubmitting(false);
     }
+
+    // Signal the dashboard to refresh (carries fresh score/brokeScore/streak).
+    DeviceEventEmitter.emit('transactionAdded', result);
+    close();
   };
 
   const segActive = (on: boolean) => ({
