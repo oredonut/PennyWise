@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { FontFamily, Colors } from '../../tokens';
-import { InsightsData, ScoreTrendPoint, CategoryBreakdownItem, ObservationItem } from './mockData';
+import { InsightsData, ScoreTrendPoint } from '../../types/api';
 import { useTheme } from '../../lib/useTheme';
 import { formatNaira as fmt } from '../../utils/currency';
 
@@ -12,12 +12,13 @@ const AMBER = Colors.amber;
 interface InsightsViewProps {
   data: InsightsData;
   tokens: any;
+  range: '7d' | '30d';
+  onRangeChange: (r: '7d' | '30d') => void;
 }
 
-export default function InsightsView({ data, tokens }: InsightsViewProps) {
+export default function InsightsView({ data, tokens, range, onRangeChange }: InsightsViewProps) {
   const { isDark, setThemeMode } = useTheme();
-  const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
-  const points = timeRange === '7d' ? data.scoreTrend7d : data.scoreTrend30d;
+  const points = (range === '7d' ? data.scoreTrend7d : data.scoreTrend30d) ?? [];
 
   // Animation values for entering
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -52,7 +53,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [timeRange]);
+  }, [range]);
 
   // Color point indicator based on Score
   const getScoreColor = (score: number) => {
@@ -142,10 +143,10 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
           </Text>
           <View style={{ flexDirection: 'row', backgroundColor: tokens.surfaceTint, borderRadius: 8, padding: 3 }}>
             <TouchableOpacity
-              onPress={() => setTimeRange('7d')}
+              onPress={() => onRangeChange('7d')}
               style={[
                 styles.rangeTab,
-                timeRange === '7d' && { backgroundColor: tokens.teal },
+                range === '7d' && { backgroundColor: tokens.teal },
               ]}
               activeOpacity={0.8}
             >
@@ -153,17 +154,17 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
                 style={[
                   styles.rangeTabText,
                   { color: tokens.text2 },
-                  timeRange === '7d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
+                  range === '7d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
                 ]}
               >
                 7d
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setTimeRange('30d')}
+              onPress={() => onRangeChange('30d')}
               style={[
                 styles.rangeTab,
-                timeRange === '30d' && { backgroundColor: tokens.teal },
+                range === '30d' && { backgroundColor: tokens.teal },
               ]}
               activeOpacity={0.8}
             >
@@ -171,7 +172,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
                 style={[
                   styles.rangeTabText,
                   { color: tokens.text2 },
-                  timeRange === '30d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
+                  range === '30d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
                 ]}
               >
                 30d
@@ -306,7 +307,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
               />
 
               {/* Render segment circle rings */}
-              {data.breakdown.map((item, index) => {
+              {(data.breakdown ?? []).map((item, index) => {
                 const percentage = item.percentage;
                 const strokeDashValue = (percentage / 100) * donutCirc;
                 const strokeOffset = donutCirc - strokeDashValue + currentOffset;
@@ -345,7 +346,7 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
 
           {/* Breakdown percentages lists */}
           <View style={{ flex: 1, paddingLeft: 12 }}>
-            {data.breakdown.map((item) => (
+            {(data.breakdown ?? []).map((item) => (
               <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color }} />
@@ -363,31 +364,33 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
         </View>
       </View>
 
-      {/* ── Observations ─────────────────────────────────── */}
-      <View style={{ paddingHorizontal: 16, marginBottom: 6 }}>
-        <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 10 }}>
-          Observations
-        </Text>
-        {data.observations.map((obs) => (
-          <View
-            key={obs.id}
-            style={[
-              styles.observationCard,
-              {
-                backgroundColor: tokens.surface,
-                borderColor: tokens.border,
-              },
-            ]}
-          >
-            <View style={[styles.obsIconWrapper, { backgroundColor: tokens.tealLight }]}>
-              <Text style={{ fontSize: 18 }}>{obs.emoji}</Text>
+      {/* ── Observations (hidden when empty) ─────────────── */}
+      {(data.observations ?? []).length > 0 && (
+        <View style={{ paddingHorizontal: 16, marginBottom: 6 }}>
+          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 10 }}>
+            Observations
+          </Text>
+          {data.observations.map((obs) => (
+            <View
+              key={obs.id}
+              style={[
+                styles.observationCard,
+                {
+                  backgroundColor: tokens.surface,
+                  borderColor: tokens.border,
+                },
+              ]}
+            >
+              <View style={[styles.obsIconWrapper, { backgroundColor: tokens.tealLight }]}>
+                <Text style={{ fontSize: 18 }}>{obs.emoji}</Text>
+              </View>
+              <Text style={[styles.obsText, { color: tokens.text1 }]}>
+                {obs.text}
+              </Text>
             </View>
-            <Text style={[styles.obsText, { color: tokens.text1 }]}>
-              {obs.text}
-            </Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
 
       {/* ── vs Last Month ────────────────────────────────── */}
       <View style={[styles.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
@@ -429,22 +432,24 @@ export default function InsightsView({ data, tokens }: InsightsViewProps) {
         </View>
       </View>
 
-      {/* ── Monthly Roast - May ───────────────────────────── */}
-      <View style={[styles.roastCard, { backgroundColor: tokens.amberLight, borderColor: tokens.amber + '55' }]}>
-        <View style={[styles.roastBadge, { backgroundColor: tokens.amber }]}>
-          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 22, color: tokens.surface }}>
-            {data.roast.grade}
-          </Text>
+      {/* ── Monthly Roast (hidden when null) ──────────────── */}
+      {data.roast && (
+        <View style={[styles.roastCard, { backgroundColor: tokens.amberLight, borderColor: tokens.amber + '55' }]}>
+          <View style={[styles.roastBadge, { backgroundColor: tokens.amber }]}>
+            <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 22, color: tokens.surface }}>
+              {data.roast.grade}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 14, color: tokens.text1, marginBottom: 4 }}>
+              Monthly Roast — {data.roast.month}
+            </Text>
+            <Text style={{ fontFamily: FontFamily.body, fontSize: 12, color: tokens.text2, lineHeight: 17 }}>
+              {data.roast.message}
+            </Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 14, color: tokens.text1, marginBottom: 4 }}>
-            Monthly Roast — {data.roast.month}
-          </Text>
-          <Text style={{ fontFamily: FontFamily.body, fontSize: 12, color: tokens.text2, lineHeight: 17 }}>
-            {data.roast.message}
-          </Text>
-        </View>
-      </View>
+      )}
     </Animated.View>
   );
 }
