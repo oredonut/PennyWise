@@ -1,3 +1,4 @@
+
 interface MerchantMapping {
   merchant_keyword: string
   category_id: string

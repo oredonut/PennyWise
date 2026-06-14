@@ -20,18 +20,21 @@ export type Database = {
           id: string
           email: string
           monthly_income: string | null
+          push_token: string | null
           created_at: string
         }
         Insert: {
           id: string
           email: string
           monthly_income?: string | null
+          push_token?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           email?: string
           monthly_income?: string | null
+          push_token?: string | null
           created_at?: string
         }
         Relationships: []

@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { computeDisciplineScore } from '@/lib/score'
-import { getUtcMonthRange } from '@/lib/time'
+import { recomputeScoreAndStreak } from '@/lib/recompute'
 import { categoryEmoji, relativeTime, transactionType } from '@/lib/format'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
@@ -198,102 +197,11 @@ export async function POST(request: NextRequest) {
     const row = data as unknown as TxnRow
     const vm = toTransactionVM(row, categoryNameFromJoin(row.categories ?? null), new Date())
 
-    // ── Synchronous score + streak recompute ─────────────────────
-    // The transaction is already committed; a failure here must NOT fail the
-    // insert. On any error we log and return the bare transaction view-model.
+    // Synchronous score + streak recompute. The transaction is already committed,
+    // so a recompute failure must NOT fail the insert — log and return bare vm.
     try {
-      const today = new Date()
-      const { startIso, endIso, daysElapsed, daysInMonth, todayIsoDate } = getUtcMonthRange(today)
-
-      const [categoriesResult, monthTxnsResult, streakResult] = await Promise.all([
-        supabase.from('categories').select('id, monthly_budget').eq('user_id', user.id),
-        supabase
-          .from('transactions')
-          .select('amount, category_id')
-          .eq('user_id', user.id)
-          .gte('created_at', startIso)
-          .lt('created_at', endIso),
-        supabase
-          .from('streaks')
-          .select('current_streak, longest_streak, last_logged_at')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-      ])
-
-      if (categoriesResult.error) throw categoriesResult.error
-      if (monthTxnsResult.error) throw monthTxnsResult.error
-      if (streakResult.error) throw streakResult.error
-
-      // Per-category spend for this month (same shape as the dashboard).
-      const categoryRows = (categoriesResult.data ?? []) as Array<{ id: string; monthly_budget: string }>
-      const spentByCategory = new Map<string, number>()
-      let totalSpent = 0
-      for (const t of (monthTxnsResult.data ?? []) as Array<{ amount: string; category_id: string | null }>) {
-        const amount = Number(t.amount)
-        if (!Number.isFinite(amount)) continue
-        totalSpent += amount
-        if (t.category_id) {
-          spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + amount)
-        }
-      }
-
-      const score = computeDisciplineScore(
-        categoryRows.map((c) => ({
-          monthly_budget: Number(c.monthly_budget),
-          spent_this_month: spentByCategory.get(c.id) ?? 0,
-        })),
-        daysElapsed,
-        daysInMonth
-      )
-
-      // Upsert today's daily log (merge on the user/date unique key).
-      const { error: logError } = await supabase.from('daily_logs').upsert(
-        {
-          user_id: user.id,
-          date: todayIsoDate,
-          discipline_score: String(score),
-          total_spent: String(totalSpent),
-        },
-        { onConflict: 'user_id,date' }
-      )
-      if (logError) throw logError
-
-      // ── Streak update ──────────────────────────────────────────
-      const yesterdayIso = new Date(
-        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 1)
-      )
-        .toISOString()
-        .slice(0, 10)
-
-      const existing = streakResult.data
-      const currentStreak = existing?.current_streak ?? 0
-      const longestStreak = existing?.longest_streak ?? 0
-      const lastLoggedDate = existing?.last_logged_at
-        ? new Date(existing.last_logged_at).toISOString().slice(0, 10)
-        : null
-
-      let streak = currentStreak
-      if (lastLoggedDate === todayIsoDate) {
-        // Already logged today — leave the streak untouched.
-        streak = currentStreak
-      } else {
-        // Yesterday → continue the run; otherwise (older or first ever) → reset to 1.
-        const nextStreak = lastLoggedDate === yesterdayIso ? currentStreak + 1 : 1
-        const nextLongest = Math.max(longestStreak, nextStreak)
-        const { error: streakError } = await supabase.from('streaks').upsert(
-          {
-            user_id: user.id,
-            current_streak: nextStreak,
-            longest_streak: nextLongest,
-            last_logged_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id' }
-        )
-        if (streakError) throw streakError
-        streak = nextStreak
-      }
-
-      return ok({ ...vm, score, brokeScore: 100 - score, streak })
+      const { score, brokeScore, streak } = await recomputeScoreAndStreak(supabase, user.id)
+      return ok({ ...vm, score, brokeScore, streak })
     } catch (recomputeError) {
       console.error('Score/streak recompute after transaction insert failed:', recomputeError)
       return ok(vm)
