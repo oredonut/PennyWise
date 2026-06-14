@@ -110,6 +110,10 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerRow, setPickerRow] = useState<string | null>(null);
+  // After a manual category change we offer to remember it (per row).
+  const [rememberPrompt, setRememberPrompt] = useState<
+    { rowId: string; categoryId: string; categoryName: string } | null
+  >(null);
   const builtRef = useRef(false);
 
   const app = useMemo(() => detectApp(result?.rawText ?? ''), [result]);
@@ -154,6 +158,19 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
   const pickCategory = (id: string, cat: ApiCategory) => {
     updateRow(id, { categoryId: cat.id, categoryName: cat.name });
     setPickerRow(null);
+    // Manual change → offer to remember it for next time.
+    setRememberPrompt({ rowId: id, categoryId: cat.id, categoryName: cat.name });
+  };
+
+  // Train the backend merchant_map. Fire-and-forget: never awaited, never
+  // blocks the confirmation flow, failures are swallowed.
+  const rememberMapping = (merchant: string, categoryId: string) => {
+    apiPost('/api/merchant-map', {
+      merchant_keyword: merchant.toLowerCase(),
+      category_id: categoryId,
+    }).catch(() => {});
+    Toast.show("Got it — we'll remember that.", 'success');
+    setRememberPrompt(null);
   };
 
   const debitTotal = rows
@@ -276,6 +293,31 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* "Remember this" prompt — only after a manual category change */}
+        {rememberPrompt?.rowId === item.id ? (
+          <View style={{ marginTop: 12, backgroundColor: tokens.tealLight, borderRadius: Radius.md, padding: 12 }}>
+            <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: tokens.text1, marginBottom: 10 }}>
+              Always categorize "{item.merchant || 'this'}" as {rememberPrompt.categoryName}?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => rememberMapping(item.merchant, rememberPrompt.categoryId)}
+                activeOpacity={0.85}
+                style={{ flex: 1, height: 38, borderRadius: 999, backgroundColor: tokens.teal, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.surface }}>Yes, remember this</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setRememberPrompt(null)}
+                activeOpacity={0.85}
+                style={{ flex: 1, height: 38, borderRadius: 999, borderWidth: 1, borderColor: tokens.border, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.text2 }}>No thanks</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
       </View>
     );
   };
