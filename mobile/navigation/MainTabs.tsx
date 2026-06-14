@@ -19,9 +19,9 @@ const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
   const navigation = useNavigation<any>();
-  const handleFabPress = () => {
-    navigation.navigate('AddTransaction');
-  };
+  // FAB now opens a small menu; each option routes to a parent-stack screen.
+  const handleSnapReceipt = () => navigation.navigate('OcrScreen');
+  const handleTypeItIn = () => navigation.navigate('AddTransaction');
 
   return (
     <Tab.Navigator
@@ -29,7 +29,9 @@ export default function MainTabs() {
       // of navigating between tabs (tabs are not a back-stack).
       backBehavior="none"
       screenOptions={{ headerShown: false }}
-      tabBar={(props: BottomTabBarProps) => <BottomTabBar {...props} onFabPress={handleFabPress} />}
+      tabBar={(props: BottomTabBarProps) => (
+        <BottomTabBar {...props} onSnapReceipt={handleSnapReceipt} onTypeItIn={handleTypeItIn} />
+      )}
     >
       {/* Each tab is isolated so a crash in one can't white-screen the app. */}
       <Tab.Screen name="HomeTab">

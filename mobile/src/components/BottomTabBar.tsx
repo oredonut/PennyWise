@@ -4,8 +4,11 @@
 // is NOT a tab; it calls props.onFabPress (passed by the navigator).
 // ============================================================
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, DeviceEventEmitter } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View, Text, TouchableOpacity, Pressable, Animated, Easing,
+  Dimensions, DeviceEventEmitter,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -31,9 +34,14 @@ const RIGHT_TABS: TabDef[] = [
   { route: 'ProfileTab', label: 'Profile', icon: ICONS.profile },
 ];
 
-type Props = BottomTabBarProps & { onFabPress: () => void };
+type Props = BottomTabBarProps & {
+  onSnapReceipt: () => void;
+  onTypeItIn: () => void;
+};
 
-export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
+const SCREEN_H = Dimensions.get('window').height;
+
+export default function BottomTabBar({ state, navigation, onSnapReceipt, onTypeItIn }: Props) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index]?.name;
@@ -48,6 +56,39 @@ export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
     );
     return () => sub.remove();
   }, []);
+
+  // ── FAB menu (Snap receipt / Type it in) ─────────────────────
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuAnim = useRef(new Animated.Value(0)).current;
+
+  const closeMenu = () => {
+    Animated.timing(menuAnim, {
+      toValue: 0, duration: 180, easing: Easing.in(Easing.cubic), useNativeDriver: true,
+    }).start(() => setMenuOpen(false));
+  };
+
+  const openMenu = () => {
+    setMenuOpen(true);
+    Animated.timing(menuAnim, {
+      toValue: 1, duration: 240, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true,
+    }).start();
+  };
+
+  const toggleMenu = () => (menuOpen ? closeMenu() : openMenu());
+
+  // Close the menu, then fire the chosen action on the next frame so the
+  // navigation transition and the menu's exit animation don't fight.
+  const select = (action: () => void) => {
+    closeMenu();
+    requestAnimationFrame(action);
+  };
+
+  const MENU_ITEMS = [
+    { key: 'snap', emoji: '📷', label: 'Snap receipt', onPress: onSnapReceipt },
+    { key: 'type', emoji: '📝', label: 'Type it in', onPress: onTypeItIn },
+  ];
+
+  const fabRotate = menuAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '135deg'] });
 
   const renderTab = (tab: TabDef) => {
     const isActive = activeRoute === tab.route;
@@ -102,10 +143,62 @@ export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
       shadowOffset: { width: 0, height: -4 },
       elevation: 10,
     }}>
+      {/* Tap-outside-to-close scrim — extends up over the screen above the bar */}
+      {menuOpen ? (
+        <Pressable
+          onPress={closeMenu}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: SCREEN_H, zIndex: 20 }}
+        >
+          <Animated.View
+            style={{
+              flex: 1,
+              backgroundColor: '#000',
+              opacity: menuAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.18] }),
+            }}
+          />
+        </Pressable>
+      ) : null}
+
       {LEFT_TABS.map(renderTab)}
 
       {/* Centre FAB — floating button, not a tab */}
-      <View style={{ flex: 1, alignItems: 'center' }}>
+      <View style={{ flex: 1, alignItems: 'center', zIndex: 30 }}>
+        {/* Menu — floats above the FAB; centred over it via symmetric insets */}
+        {menuOpen ? (
+          <View style={{ position: 'absolute', bottom: 66, left: -110, right: -110, alignItems: 'center', gap: 10 }}>
+            {MENU_ITEMS.map((item) => (
+              <Animated.View
+                key={item.key}
+                style={{
+                  opacity: menuAnim,
+                  transform: [
+                    { translateY: menuAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+                    { scale: menuAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
+                  ],
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => select(item.onPress)}
+                  activeOpacity={0.85}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 8,
+                    backgroundColor: tokens.surface,
+                    borderWidth: 1, borderColor: tokens.border,
+                    borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11,
+                    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 3 }, elevation: 6,
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
+                  <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: tokens.text1 }}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            ))}
+          </View>
+        ) : null}
+
         <TouchableOpacity
           style={{
             width: 54, height: 54, borderRadius: 27,
@@ -117,11 +210,13 @@ export default function BottomTabBar({ state, navigation, onFabPress }: Props) {
             elevation: 8,
           }}
           activeOpacity={0.82}
-          onPress={onFabPress}
+          onPress={toggleMenu}
         >
-          <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
-          </Svg>
+          <Animated.View style={{ transform: [{ rotate: fabRotate }] }}>
+            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+              <Path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+            </Svg>
+          </Animated.View>
 
           {/* Pending offline transactions waiting to sync */}
           {pendingCount > 0 ? (

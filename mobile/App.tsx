@@ -29,6 +29,8 @@ import RegisterScreen from './screens/auth/RegisterScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
+import OcrScreen from './screens/OcrScreen';
+import OcrConfirmScreen from './screens/OcrConfirmScreen';
 import * as Notifications from 'expo-notifications';
 import { apiPost } from './hooks/useApi';
 import { useNetworkSync } from './lib/netInfo';
@@ -150,6 +152,10 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
             component={AddTransactionScreen}
             options={{ presentation: 'transparentModal', animation: 'fade' }}
           />
+
+          {/* Snap receipt — OCR capture → review */}
+          <Stack.Screen name="OcrScreen" component={OcrScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="OcrConfirm" component={OcrConfirmScreen} options={{ animation: 'slide_from_right' }} />
         </Stack.Navigator>
       </NavigationContainer>
       <ToastViewport />
