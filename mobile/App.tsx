@@ -26,6 +26,8 @@ import { registerRootComponent } from 'expo';
 import { SplashScreen as PWSplashScreen } from './screens/auth/splashScreen';
 import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
+import OtpScreen      from './screens/auth/OtpScreen';
+import ProfileSetupScreen from './screens/auth/ProfileSetupScreen';
 import OnboardingScreen, { ONBOARDED_KEY } from './screens/OnboardingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainTabs        from './navigation/MainTabs';
@@ -152,6 +154,9 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
 
           <Stack.Screen name="Login"    component={LoginScreen}    />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          {/* Signup → Otp → ProfileSetup → MainTabs (verify-then-setup chain) */}
+          <Stack.Screen name="Otp" component={OtpScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
 
           {/* ── App (bottom tabs) ──────────────────────────── */}
