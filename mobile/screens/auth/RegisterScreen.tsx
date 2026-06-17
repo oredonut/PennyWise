@@ -17,7 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 
-type RootStackParamList = { Login: undefined; Register: undefined };
+type RootStackParamList = { Login: undefined; Register: undefined; Onboarding: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Register'> };
 
 const UNIVERSITIES = [
@@ -84,7 +84,14 @@ export default function RegisterScreen({ navigation }: Props) {
           },
         },
       });
-      if (authError) setError(authError.message);
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      // TODO(OTP): OTP verification (screen 05) doesn't exist yet, so we go
+      // straight to Onboarding on signup. Once OTP is built, route to the OTP
+      // screen here and let it forward to Onboarding after verification.
+      navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
     } catch (e: any) {
       // Network / unexpected failure — surface instead of an unhandled rejection.
       setError(e?.message ?? 'Something went wrong. Please try again.');

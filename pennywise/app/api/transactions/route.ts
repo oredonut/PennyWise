@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { recomputeTodayScore } from '@/lib/scoring/recompute'
+import { recomputeTodayScore, type RecomputeResult } from '@/lib/scoring/recompute'
+import { parseTransactionInput, TRANSACTION_SELECT } from '@/lib/transactions/parse'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -32,13 +33,6 @@ export async function GET() {
   }
 }
 
-interface TransactionBody {
-  category_id: string
-  amount: number
-  note?: string
-  source?: 'manual' | 'screenshot' | 'sms' | 'recurring'
-}
-
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -48,35 +42,39 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
-    let body: TransactionBody
+    let body: unknown
     try {
-      body = (await request.json()) as TransactionBody
+      body = await request.json()
     } catch {
       return err('Invalid JSON body', 'invalid_body', 400)
     }
 
-    if (!body.category_id || typeof body.amount !== 'number') {
-      return err('category_id and amount are required', 'invalid_input', 400)
-    }
+    // Shared with POST /api/transactions/bulk — see lib/transactions/parse.ts.
+    const parsed = parseTransactionInput(body)
+    if (!parsed.ok) return err(parsed.error, 'invalid_input', 400)
 
     const { data, error: insertError } = await supabase
       .from('transactions')
-      .insert({
-        user_id: user.id,
-        category_id: body.category_id,
-        amount: String(body.amount),
-        note: body.note ?? null,
-        source: body.source ?? 'manual',
-      })
-      .select('id, category_id, amount, note, source, merchant_raw, created_at')
+      .insert({ user_id: user.id, source: 'manual', ...parsed.row })
+      .select(TRANSACTION_SELECT)
       .single()
 
     if (insertError) return err(insertError.message, 'db_error', 500)
 
-    // Fire-and-forget — don't block the POST response on score recompute
-    recomputeTodayScore(supabase, user.id, { [body.category_id]: body.amount }).catch(() => {})
+    // Live score loop: recompute synchronously so the response can carry the
+    // fresh score/streak (mobile's SubmitResult). The transaction is already
+    // committed, so a scoring failure must NOT fail the request — fall back to
+    // null numbers rather than 500 (which could trigger an offline re-submit).
+    let recompute: RecomputeResult = { score: null, brokeScore: null, streak: null }
+    try {
+      recompute = await recomputeTodayScore(supabase, user.id, {
+        [parsed.categoryId]: parsed.amount,
+      })
+    } catch {
+      // best-effort — surface the saved transaction regardless
+    }
 
-    return ok(data)
+    return ok({ ...data, ...recompute })
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Internal error', 'internal', 500)
   }

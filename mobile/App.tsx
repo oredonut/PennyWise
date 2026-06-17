@@ -26,7 +26,8 @@ import { registerRootComponent } from 'expo';
 import { SplashScreen as PWSplashScreen } from './screens/auth/splashScreen';
 import LoginScreen    from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
-import OnboardingScreen from './screens/OnboardingScreen';
+import OnboardingScreen, { ONBOARDED_KEY } from './screens/OnboardingScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
 import OcrScreen from './screens/OcrScreen';
@@ -131,9 +132,20 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
           <Stack.Screen name="Splash">
             {({ navigation }) => (
               <PWSplashScreen
-                onFinish={() =>
-                  navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
-                }
+                onFinish={async () => {
+                  // First-run users see Onboarding; returning users (flag set on
+                  // "Get Started") skip straight to Login.
+                  let onboarded = false;
+                  try {
+                    onboarded = (await AsyncStorage.getItem(ONBOARDED_KEY)) === '1';
+                  } catch {
+                    // ignore — default to showing onboarding
+                  }
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: onboarded ? 'Login' : 'Onboarding' }],
+                  });
+                }}
               />
             )}
           </Stack.Screen>

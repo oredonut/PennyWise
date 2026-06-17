@@ -78,6 +78,8 @@ export type Database = {
           note: string | null
           source: string | null
           merchant_raw: string | null
+          type: string
+          occurred_at: string
           created_at: string
         }
         Insert: {
@@ -88,6 +90,8 @@ export type Database = {
           note?: string | null
           source?: string | null
           merchant_raw?: string | null
+          type?: string
+          occurred_at?: string
           created_at?: string
         }
         Update: {
@@ -98,6 +102,8 @@ export type Database = {
           note?: string | null
           source?: string | null
           merchant_raw?: string | null
+          type?: string
+          occurred_at?: string
           created_at?: string
         }
         Relationships: []

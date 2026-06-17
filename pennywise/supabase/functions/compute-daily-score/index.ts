@@ -213,6 +213,8 @@ Deno.serve(async () => {
           last_logged_at: null,
         }) as StreakRow
 
+        // KEEP-IN-SYNC with lib/scoring/recompute.ts: the live POST
+        // /api/transactions path runs this exact streak transition inline.
         let currentStreak = previousStreak.current_streak
         let longestStreak = previousStreak.longest_streak
         const lastLoggedDate = getLastLoggedDate(previousStreak.last_logged_at)

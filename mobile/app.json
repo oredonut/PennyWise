@@ -4,25 +4,38 @@
     "slug": "pennywise",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": [
-      "ios",
-      "android"
-    ],
     "scheme": "pennywise",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f5f7f9"
+    },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pennywise.app",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.pennywise.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#faf7f2"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f766e"
+      },
+      "permissions": [
+        "NOTIFICATIONS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "plugins": [
-      "expo-font"
+      "expo-notifications",
+      "expo-image-picker"
     ],
-    "sdkVersion": "54.0.0"
+    "extra": {
+      "eas": { "projectId": "YOUR_EAS_PROJECT_ID" }
+    }
   }
 }

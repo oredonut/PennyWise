@@ -30,22 +30,20 @@ export default function LoginScreen({ navigation }: Props) {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-
-    // ── TODO (backend): uncomment the block below when Supabase is ready ──
-    // const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    // setLoading(false);
-    // if (authError) {
-    //   setError(authError.message);
-    //   return;
-    // }
-    // ──────────────────────────────────────────────────────────────────────
-
-    // DEV: skip auth, go straight to Home
-    setLoading(false);
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    } catch (e: any) {
+      // Network / unexpected failure — surface instead of failing silently.
+      setError(e?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const goHomeNow = () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
 
   return (
     <KeyboardAvoidingView
@@ -145,11 +143,6 @@ export default function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Forgot */}
-        <TouchableOpacity style={styles.forgotRow}>
-          <Text style={[styles.forgotText, { color: tokens.teal }]}>Forgot password?</Text>
-        </TouchableOpacity>
-
         {/* Error */}
         {error ? <Text style={[styles.errorText, { color: tokens.danger }]}>{error}</Text> : null}
 
@@ -169,30 +162,6 @@ export default function LoginScreen({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
-          <Text style={[styles.dividerLabel, { color: tokens.text3 }]}>or</Text>
-          <View style={[styles.dividerLine, { backgroundColor: tokens.border }]} />
-        </View>
-
-        {/* Google */}
-        <TouchableOpacity
-          style={[
-            styles.outlinedBtn,
-            {
-              backgroundColor: tokens.surface,
-              borderColor: tokens.border,
-            },
-          ]}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.googleG, { color: tokens.text1 }]}>G</Text>
-          <Text style={[styles.outlinedBtnText, { color: tokens.text1 }]}>
-            Continue with Google
-          </Text>
-        </TouchableOpacity>
-
         {/* Footer */}
         <TouchableOpacity
           onPress={() => navigation.navigate('Register')}
@@ -203,17 +172,6 @@ export default function LoginScreen({ navigation }: Props) {
             <Text style={{ fontFamily: FontFamily.bodySemiBold, color: tokens.teal }}>Sign up</Text>
           </Text>
         </TouchableOpacity>
-
-        {/* ── DEV ONLY — remove before production ────────────────── */}
-        <TouchableOpacity
-          onPress={goHomeNow}
-          style={[styles.devBypass, { borderColor: tokens.border }]}
-        >
-          <Text style={[styles.devBypassText, { color: tokens.text3 }]}>
-            ⚡ Preview Home (dev bypass)
-          </Text>
-        </TouchableOpacity>
-        {/* ─────────────────────────────────────────────────────────── */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -272,9 +230,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 12,
   },
-  inputFocused: {
-    borderColor: '#0f766e',
-  },
   passwordWrap: {
     height: 52,
     borderRadius: Radius.pill,
@@ -282,7 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   passwordInput: {
     flex: 1,
@@ -292,14 +247,6 @@ const styles = StyleSheet.create({
   eyeIcon: {
     fontSize: 18,
     paddingLeft: 8,
-  },
-  forgotRow: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotText: {
-    fontFamily: FontFamily.body,
-    fontSize: 13,
   },
   errorText: {
     fontFamily: FontFamily.body,
@@ -322,55 +269,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.2,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerLabel: {
-    fontFamily: FontFamily.body,
-    fontSize: 13,
-  },
-  outlinedBtn: {
-    height: 52,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 32,
-  },
-  googleG: {
-    fontFamily: FontFamily.displayXBold,
-    fontSize: 16,
-  },
-  outlinedBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-  },
   footerRow: {
     alignItems: 'center',
   },
   footerText: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-  },
-  devBypass: {
-    alignItems: 'center',
-    marginTop: 24,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 10,
-  },
-  devBypassText: {
-    fontFamily: FontFamily.body,
-    fontSize: 13,
   },
 });
