@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
