@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 import { computeBrokeScore } from '@/lib/scoring/compute'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
   NextResponse.json({ error, code }, { status })
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const today = new Date().toISOString().slice(0, 10)

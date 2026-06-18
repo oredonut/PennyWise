@@ -34,7 +34,7 @@ function strengthColor(score: number, tokens: any): string {
 }
 
 export default function RegisterScreen({ navigation }: Props) {
-  const { tokens, isDark, setThemeMode } = useTheme();
+  const { tokens } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -75,31 +75,6 @@ export default function RegisterScreen({ navigation }: Props) {
       style={[styles.root, { backgroundColor: tokens.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Dynamic Theme Toggle in Top Right */}
-      <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 54 : 16, right: 24, zIndex: 10 }}>
-        <TouchableOpacity
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: tokens.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: tokens.border,
-            shadowColor: '#000',
-            shadowOpacity: 0.05,
-            shadowRadius: 5,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 2,
-          }}
-          onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ fontSize: 18 }}>{isDark ? '☀️' : '🌙'}</Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"

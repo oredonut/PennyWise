@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 import { recomputeTodayScore, type RecomputeResult } from '@/lib/scoring/recompute'
 import { parseTransactionInput, TRANSACTION_SELECT } from '@/lib/transactions/parse'
 
@@ -7,13 +7,9 @@ const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
   NextResponse.json({ error, code }, { status })
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const since = new Date()
@@ -35,11 +31,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     let body: unknown

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 import { getUtcMonthRange } from '@/lib/time'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
@@ -58,13 +58,9 @@ function buildCategoryResponse(
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const { startIso, endIso } = getUtcMonthRange()
@@ -109,11 +105,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     let body: CreateCategoryBody

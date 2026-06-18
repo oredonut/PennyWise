@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -7,14 +7,10 @@ const err = (error: string, code: string, status: number) =>
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const { data, error: dbError } = await supabase
@@ -43,11 +39,7 @@ interface PatchBody {
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     let body: PatchBody
@@ -84,14 +76,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const { error: deleteError } = await supabase

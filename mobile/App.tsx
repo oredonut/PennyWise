@@ -35,8 +35,6 @@ import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
 import OcrScreen from './screens/OcrScreen';
 import OcrConfirmScreen from './screens/OcrConfirmScreen';
-import * as Notifications from 'expo-notifications';
-import { apiPost } from './hooks/useApi';
 import { useNetworkSync } from './lib/netInfo';
 import { ToastViewport, Toast } from './src/components/Toast';
 import { supabase } from './lib/supabase';
@@ -45,18 +43,6 @@ import { supabase } from './lib/supabase';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
-
-// Foreground notification presentation.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    // Required by expo-notifications (SDK 54) — replaces shouldShowAlert.
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
 
 // Ref so the notification-tap handler can navigate from outside React.
 const navigationRef = createNavigationContainerRef();
@@ -98,28 +84,8 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
   }, []);
 
   useEffect(() => {
-    // Ask for permission on first launch, then register the Expo push token.
-    (async () => {
-      try {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status === 'granted') {
-          const token = await Notifications.getExpoPushTokenAsync();
-          await apiPost('/api/push-token', { token: token.data });
-        }
-      } catch {
-        // Best-effort (e.g. no session yet, or running in Expo Go) — never fatal.
-      }
-    })();
-
-    // Deep-link notification taps to the relevant tab.
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as { route?: string };
-      if (data?.route === 'Insights' && navigationRef.isReady()) {
-        // Nested navigate into the tab navigator (untyped ref → cast).
-        (navigationRef as any).navigate('MainTabs', { screen: 'InsightsTab' });
-      }
-    });
-    return () => sub.remove();
+    // Push token registration — skipped in Expo Go (expo-notifications not
+    // supported on SDK 53+). Will be wired in dev build.
   }, []);
 
   if (!fontsLoaded) return null;

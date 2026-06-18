@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -11,13 +11,9 @@ type UpsertBody = {
 }
 
 // GET — every merchant_map row for the user, with the category name joined in.
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const [mapResult, categoriesResult] = await Promise.all([
@@ -55,11 +51,7 @@ export async function GET() {
 // exists, inserts otherwise.
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     let body: UpsertBody

@@ -63,7 +63,11 @@ async function request<T>(path: string, spec: RequestSpec): Promise<T> {
       res = await authedFetch(path, spec, data.session.access_token);
     }
     if (res.status === 401) {
-      await supabase.auth.signOut();
+      // A 401 can be transient (e.g. a cold Vercel function start). Only sign
+      // out if the session is genuinely gone — otherwise we'd boot the user
+      // out on a flaky request.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) await supabase.auth.signOut();
     }
   }
 

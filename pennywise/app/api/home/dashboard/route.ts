@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
 import { computeDisciplineScore } from '@/lib/score'
 import { getUtcMonthRange } from '@/lib/time'
 import {
@@ -43,13 +43,9 @@ function badgeFromScore(score: number): string {
   return 'Starting Fresh'
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { user, error: authError, supabase } = await getAuthenticatedUser(request)
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const today = new Date()
