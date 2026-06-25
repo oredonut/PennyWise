@@ -85,6 +85,17 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
 
   const coords = getCoordinates(points);
 
+  // Breakdown heading is the real month, not a hardcoded label. monthYear is
+  // e.g. "May 2026"; take the month word so it reads "May Breakdown".
+  const breakdownMonth = (data.monthYear ?? '').trim().split(' ')[0] || 'This month';
+
+  // vs-Last-Month delta is data-driven: isSavings = spent less than last month.
+  // Down/green/"less" when saving, up/red/"more" when overspending.
+  const spentLess = data.comparison.isSavings;
+  const deltaColor = spentLess ? tokens.success : tokens.danger;
+  const deltaArrow = spentLess ? '↓' : '↑';
+  const deltaWord = spentLess ? 'less' : 'more';
+
   // Generate SVG path description d="M x0 y0 L x1 y1..."
   let pathD = '';
   if (coords.length > 0) {
@@ -237,7 +248,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
       {/* ── May Breakdown Card (Donut Chart) ──────────────── */}
       <View style={[styles.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
         <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 14 }}>
-          May Breakdown
+          {breakdownMonth} Breakdown
         </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -357,14 +368,14 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
             </Text>
           </View>
 
-          {/* Change pill */}
+          {/* Change pill — arrow/colour/wording flip with the real delta */}
           <View style={{ alignItems: 'center', paddingHorizontal: 10 }}>
-            <Text style={{ fontSize: 16, color: tokens.success, marginBottom: 2 }}>↓</Text>
-            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: tokens.success }}>
-              {fmt(data.comparison.difference)}
+            <Text style={{ fontSize: 16, color: deltaColor, marginBottom: 2 }}>{deltaArrow}</Text>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: deltaColor }}>
+              {fmt(Math.abs(data.comparison.difference))}
             </Text>
-            <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: tokens.success }}>
-              {data.comparison.percentage}% less
+            <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: deltaColor }}>
+              {data.comparison.percentage}% {deltaWord}
             </Text>
           </View>
 

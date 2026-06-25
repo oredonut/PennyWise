@@ -230,12 +230,22 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
         {/* Line 1 — flag · emoji · merchant · delete */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {lowConf ? (
-            <TouchableOpacity onPress={() => Toast.show(LOW_CONFIDENCE_NOTE, 'info')} hitSlop={10}>
-              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: tokens.amber }} />
+            // Uncertainty, not error — amber-tinted "Check this" chip. A labelled
+            // chip is more discoverable than the old unlabelled 9px dot.
+            <TouchableOpacity
+              onPress={() => Toast.show(LOW_CONFIDENCE_NOTE, 'info')}
+              hitSlop={8}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 4,
+                backgroundColor: tokens.amberLight, borderRadius: 999,
+                paddingHorizontal: 8, paddingVertical: 3,
+              }}
+            >
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.amber }} />
+              <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: tokens.amber }}>Check this</Text>
             </TouchableOpacity>
-          ) : (
-            <View style={{ width: 9 }} />
-          )}
+          ) : null}
           <Text style={{ fontSize: 18 }}>{emoji}</Text>
           <TextInput
             value={item.merchant}

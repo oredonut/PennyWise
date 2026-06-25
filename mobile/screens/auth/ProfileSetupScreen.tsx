@@ -22,12 +22,23 @@ import {
   Pressable,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Path } from 'react-native-svg';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 import { apiPatch } from '../../hooks/useApi';
 
 type RootStackParamList = { ProfileSetup: undefined; MainTabs: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'ProfileSetup'> };
+
+// Feather-style chevron-down (matches the inline-SVG icon convention used
+// elsewhere) — replaces the old rotated "›" glyph on the university picker.
+function ChevronDown({ color }: { color: string }) {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 9l6 6 6-6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
 
 const UNIVERSITIES = [
   'University of Lagos',
@@ -151,7 +162,7 @@ export default function ProfileSetupScreen({ navigation }: Props) {
           >
             {university !== '' ? university : 'University'}
           </Text>
-          <Text style={[styles.chevron, { color: tokens.text3 }]}>›</Text>
+          <ChevronDown color={tokens.text3} />
         </TouchableOpacity>
 
         {/* Monthly budget */}
@@ -308,10 +319,6 @@ const styles = StyleSheet.create({
   dropdownPlaceholder: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-  },
-  chevron: {
-    fontSize: 20,
-    transform: [{ rotate: '90deg' }],
   },
   fieldLabel: {
     fontFamily: FontFamily.body,

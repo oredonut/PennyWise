@@ -8,11 +8,21 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../../lib/supabase';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
+import { EyeIcon } from './EyeIcon';
+
+// design.md §inputs — full focus treatment: teal border + tinted background
+// + 3px ring (vs. the previous border-colour-only change).
+const focusStyle = {
+  borderColor: '#0f766e',
+  backgroundColor: 'rgba(204,251,241,0.18)',
+  boxShadow: '0 0 0 3px rgba(15,118,110,0.12)',
+} as const;
 
 type RootStackParamList = { Login: undefined; Register: undefined; MainTabs: undefined };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> };
@@ -79,7 +89,7 @@ export default function LoginScreen({ navigation }: Props) {
               borderColor: tokens.border,
               color: tokens.text1,
             },
-            emailFocused && { borderColor: tokens.teal },
+            emailFocused && focusStyle,
           ]}
           placeholder="tunde@gmail.com"
           placeholderTextColor={tokens.text3}
@@ -100,7 +110,7 @@ export default function LoginScreen({ navigation }: Props) {
               backgroundColor: tokens.surface,
               borderColor: tokens.border,
             },
-            passFocused && { borderColor: tokens.teal },
+            passFocused && focusStyle,
           ]}
         >
           <TextInput
@@ -113,10 +123,24 @@ export default function LoginScreen({ navigation }: Props) {
             onFocus={() => setPassFocused(true)}
             onBlur={() => setPassFocused(false)}
           />
-          <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8}>
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+          <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8} style={{ paddingLeft: 8 }}>
+            <EyeIcon off={showPassword} color={tokens.text3} />
           </TouchableOpacity>
         </View>
+
+        {/* Forgot password — UI stub: no backend reset flow exists yet. */}
+        <TouchableOpacity
+          onPress={() =>
+            Alert.alert(
+              'Coming soon',
+              "Password reset isn't available just yet. Reach out and we'll help you get back in.",
+            )
+          }
+          style={styles.forgotRow}
+          hitSlop={8}
+        >
+          <Text style={[styles.forgotText, { color: tokens.teal }]}>Forgot password?</Text>
+        </TouchableOpacity>
 
         {/* Error */}
         {error ? <Text style={[styles.errorText, { color: tokens.danger }]}>{error}</Text> : null}
@@ -212,16 +236,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   passwordInput: {
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
   },
-  eyeIcon: {
-    fontSize: 18,
-    paddingLeft: 8,
+  forgotRow: {
+    alignSelf: 'flex-end',
+    marginBottom: 16,
+  },
+  forgotText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
   },
   errorText: {
     fontFamily: FontFamily.body,

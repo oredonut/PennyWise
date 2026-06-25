@@ -13,6 +13,15 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../../lib/supabase';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
+import { EyeIcon } from './EyeIcon';
+
+// design.md §inputs — full focus treatment: teal border + tinted background
+// + 3px ring (vs. the previous border-colour-only change).
+const focusStyle = {
+  borderColor: '#0f766e',
+  backgroundColor: 'rgba(204,251,241,0.18)',
+  boxShadow: '0 0 0 3px rgba(15,118,110,0.12)',
+} as const;
 
 type RootStackParamList = { Login: undefined; Register: undefined; Otp: { email: string } };
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Register'> };
@@ -104,7 +113,7 @@ export default function RegisterScreen({ navigation }: Props) {
               borderColor: tokens.border,
               color: tokens.text1,
             },
-            emailFocused && { borderColor: tokens.teal },
+            emailFocused && focusStyle,
           ]}
           placeholder="Email"
           placeholderTextColor={tokens.text3}
@@ -125,7 +134,7 @@ export default function RegisterScreen({ navigation }: Props) {
               backgroundColor: tokens.surface,
               borderColor: tokens.border,
             },
-            passFocused && { borderColor: tokens.teal },
+            passFocused && focusStyle,
           ]}
         >
           <TextInput
@@ -138,8 +147,8 @@ export default function RegisterScreen({ navigation }: Props) {
             onFocus={() => setPassFocused(true)}
             onBlur={() => setPassFocused(false)}
           />
-          <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8}>
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+          <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8} style={{ paddingLeft: 8 }}>
+            <EyeIcon off={showPassword} color={tokens.text3} />
           </TouchableOpacity>
         </View>
 
@@ -255,10 +264,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
-  },
-  eyeIcon: {
-    fontSize: 18,
-    paddingLeft: 8,
   },
   strengthRow: {
     flexDirection: 'row',

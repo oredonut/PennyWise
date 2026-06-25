@@ -25,12 +25,6 @@ export async function extractFromImage(imageUri: string): Promise<ParseResult> {
   // modules — the parser above stays importable even when this would fail.
   const MlkitOcr = await import('react-native-mlkit-ocr').catch(() => null);
 
-  // TEMP DEBUG: is the native OCR module loadable on this run?
-  console.log('[ocr] MlkitOcr import →', MlkitOcr === null ? 'NULL (catch)' : 'resolved', {
-    hasDefault: !!MlkitOcr && !!(MlkitOcr as any).default,
-    hasDetect: !!MlkitOcr && typeof (MlkitOcr as any).default?.detectFromUri === 'function',
-  });
-
   if (!MlkitOcr) {
     throw new Error('OCR module not available');
   }

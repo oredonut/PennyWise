@@ -157,12 +157,6 @@ export default function OcrScreen({ navigation }: any) {
       setState('done');
       navigation.navigate('OcrConfirm', { result, imageUri });
     } catch (e) {
-      // TEMP DEBUG: surface the real OCR failure in the Metro/Expo terminal.
-      console.error('[OCR DEBUG]', {
-        message: e instanceof Error ? e.message : String(e),
-        stack: e instanceof Error ? e.stack : undefined,
-        name: e instanceof Error ? e.name : undefined,
-      });
       setErrorKind(classifyError(e));
       setState('error');
     }
