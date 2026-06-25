@@ -12,6 +12,7 @@ import type {
   Streaks,
   Badge,
   TransactionsPage,
+  CategorySettings,
 } from '../types/api';
 
 export type ApiResponse<T> = {
@@ -96,6 +97,29 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+export async function apiDelete<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'DELETE' });
+}
+
+// Soft-delete the signed-in account (DELETE /api/account). The backend marks
+// users.deleted_at; the caller is responsible for signing out afterward.
+export async function deleteAccount(): Promise<null> {
+  return apiDelete<null>('/api/account');
+}
+
+// Update a single category's monthly budget (PATCH /api/categories/[id]).
+// This is what actually drives the dashboard's Budget figure (the dashboard
+// sums categories.monthly_budget).
+export async function updateCategoryBudget(
+  categoryId: string,
+  monthlyBudget: number
+): Promise<{ id: string; monthly_budget: string }> {
+  return apiPatch<{ id: string; monthly_budget: string }>(
+    `/api/categories/${categoryId}`,
+    { monthly_budget: monthlyBudget }
+  );
+}
+
 // ── Generic resource hook ────────────────────────────────────
 function useApiResource<T>(
   fetcher: () => Promise<T>,
@@ -143,6 +167,13 @@ export function useStreaks(): ApiResponse<Streaks> & { refetch: () => void } {
 
 export function useBadges(): ApiResponse<{ badges: Badge[] }> & { refetch: () => void } {
   return useApiResource<{ badges: Badge[] }>(() => apiGet<{ badges: Badge[] }>('/api/profile/badges'), []);
+}
+
+export function useCategories(): ApiResponse<{ categories: CategorySettings[] }> & { refetch: () => void } {
+  return useApiResource<{ categories: CategorySettings[] }>(
+    () => apiGet<{ categories: CategorySettings[] }>('/api/categories'),
+    []
+  );
 }
 
 export function useTransactions(

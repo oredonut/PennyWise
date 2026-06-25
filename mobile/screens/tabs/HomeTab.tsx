@@ -315,7 +315,7 @@ function DashboardSkeleton({ tokens }: any) {
 
 // ── HomeTab Screen ────────────────────────────────────────────
 export default function HomeTab() {
-  const { tokens, isDark, setThemeMode } = useTheme();
+  const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const { data, isLoading, error, refetch } = useDashboard();
 
@@ -390,14 +390,6 @@ export default function HomeTab() {
                 </View>
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  <TouchableOpacity
-                    style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: tokens.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: tokens.border }}
-                    onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
-                  </TouchableOpacity>
-
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.tealLight, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, gap: 4 }}>
                     <Text style={{ fontSize: 13 }}>🔥</Text>
                     <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.teal }}>{streakDays}d</Text>

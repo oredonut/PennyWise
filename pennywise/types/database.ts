@@ -22,6 +22,7 @@ export type Database = {
           monthly_income: string | null
           push_token: string | null
           created_at: string
+          deleted_at: string | null
         }
         Insert: {
           id: string
@@ -29,6 +30,7 @@ export type Database = {
           monthly_income?: string | null
           push_token?: string | null
           created_at?: string
+          deleted_at?: string | null
         }
         Update: {
           id?: string
@@ -36,6 +38,7 @@ export type Database = {
           monthly_income?: string | null
           push_token?: string | null
           created_at?: string
+          deleted_at?: string | null
         }
         Relationships: []
       }

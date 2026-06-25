@@ -25,6 +25,19 @@ export async function GET(request: NextRequest) {
 
     if (logsError) return err(logsError.message, 'db_error', 500)
 
+    // Current monthly budget limit (users.monthly_income) — the same value the
+    // onboarding/Profile-Setup step writes via PATCH below. Echoed so the
+    // Settings budget editor can pre-fill without a separate endpoint.
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('monthly_income')
+      .eq('id', user.id)
+      .maybeSingle()
+    const monthlyBudget =
+      userRow?.monthly_income != null && Number.isFinite(Number(userRow.monthly_income))
+        ? Number(userRow.monthly_income)
+        : null
+
     const scores = (logs ?? []).map((l) => Number(l.discipline_score)).filter((n) => Number.isFinite(n))
     const avgScore = scores.length === 0 ? 50 : scores.reduce((s, n) => s + n, 0) / scores.length
     const grade = gradeFromScore(avgScore)
@@ -44,6 +57,7 @@ export async function GET(request: NextRequest) {
       grade,
       gradeLabel: `Grade ${grade} Saver`,
       memberSince,
+      monthlyBudget,
     })
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Internal error', 'internal', 500)

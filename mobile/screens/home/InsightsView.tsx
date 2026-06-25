@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { FontFamily, Colors, Radius } from '../../tokens';
 import { InsightsData, ScoreTrendPoint } from '../../types/api';
-import { useTheme } from '../../lib/useTheme';
 import { formatNaira as fmt } from '../../utils/currency';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 
@@ -18,7 +17,6 @@ interface InsightsViewProps {
 }
 
 export default function InsightsView({ data, tokens, range, onRangeChange }: InsightsViewProps) {
-  const { isDark, setThemeMode } = useTheme();
   const points = (range === '7d' ? data.scoreTrend7d : data.scoreTrend30d) ?? [];
 
   // Animation values for entering
@@ -116,24 +114,6 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
             {data.monthYear} · {data.weekLabel}
           </Text>
         </View>
-
-        {/* Theme Toggle Button */}
-        <TouchableOpacity
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: tokens.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: tokens.border,
-          }}
-          onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
-        </TouchableOpacity>
       </View>
 
       {/* ── Score Trend Card ─────────────────────────────── */}

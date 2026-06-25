@@ -111,11 +111,26 @@ export interface ProfileData {
   grade: string;
   gradeLabel: string;
   memberSince: string;
+  // Current monthly budget limit (users.monthly_income); null if unset.
+  monthlyBudget: number | null;
 }
 
 export interface Streaks {
   currentStreak: number;
   longestStreak: number;
+}
+
+// ── Categories (GET /api/categories) ─────────────────────────
+// The editable per-category budget list — same rows the dashboard's
+// Category Budgets card is built from (categories table, user-scoped).
+export interface CategorySettings {
+  id: string;
+  name: string;
+  monthly_budget: number;
+  color: string | null;
+  is_custom: boolean;
+  spent_this_month: number;
+  pct_used: number;
 }
 
 export interface Badge {
