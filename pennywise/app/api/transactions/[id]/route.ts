@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
+import { TRANSACTION_SELECT } from '@/lib/transactions/parse'
+import { recomputeTodayScore } from '@/lib/scoring/recompute'
 
 const ok = <T>(data: T) => NextResponse.json({ data })
 const err = (error: string, code: string, status: number) =>
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     const { data, error: dbError } = await supabase
       .from('transactions')
-      .select('id, category_id, amount, note, source, merchant_raw, created_at')
+      .select(TRANSACTION_SELECT)
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
@@ -62,7 +64,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .update(update)
       .eq('id', id)
       .eq('user_id', user.id)
-      .select('id, category_id, amount, note, source, merchant_raw, created_at')
+      .select(TRANSACTION_SELECT)
       .single()
 
     if (updateError) {
@@ -70,6 +72,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       const code = updateError.code === 'PGRST116' ? 'not_found' : 'db_error'
       return err(updateError.message, code, status)
     }
+
+    // Live score loop (mirrors POST /api/transactions): editing category/note
+    // can move today's discipline score. Fire-and-forget — never block or fail
+    // the response on it.
+    recomputeTodayScore(supabase, user.id).catch(() => {})
+
     return ok(data)
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Internal error', 'internal', 500)
@@ -89,6 +97,11 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .eq('user_id', user.id)
 
     if (deleteError) return err(deleteError.message, 'db_error', 500)
+
+    // Live score loop (mirrors POST /api/transactions): removing a transaction
+    // can move today's discipline score. Fire-and-forget.
+    recomputeTodayScore(supabase, user.id).catch(() => {})
+
     return ok(null)
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Internal error', 'internal', 500)

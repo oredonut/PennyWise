@@ -35,6 +35,7 @@ import MainTabs        from './navigation/MainTabs';
 import AddTransactionScreen from './screens/AddTransactionScreen';
 import OcrScreen from './screens/OcrScreen';
 import OcrConfirmScreen from './screens/OcrConfirmScreen';
+import TxnDetailScreen from './screens/TxnDetailScreen';
 import { useNetworkSync } from './lib/netInfo';
 import { ToastViewport, Toast } from './src/components/Toast';
 import { supabase } from './lib/supabase';
@@ -141,6 +142,9 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
           {/* Snap receipt — OCR capture → review */}
           <Stack.Screen name="OcrScreen" component={OcrScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="OcrConfirm" component={OcrConfirmScreen} options={{ animation: 'slide_from_right' }} />
+
+          {/* Transaction detail — pushed from History/Home rows (id param) */}
+          <Stack.Screen name="TxnDetail" component={TxnDetailScreen} options={{ animation: 'slide_from_right' }} />
         </Stack.Navigator>
       </NavigationContainer>
       <ToastViewport />

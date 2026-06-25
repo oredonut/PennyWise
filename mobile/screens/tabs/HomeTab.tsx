@@ -12,6 +12,7 @@ import {
   RefreshControl, Animated, Easing, DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { ScribbleLayer } from '../../src/components/ScribbleLayer';
@@ -247,7 +248,7 @@ function CategoryBudgetsSection({ categories, tokens, enterAnim }: any) {
 }
 
 // ── Empty states ──────────────────────────────────────────────
-function EmptyCategories({ tokens }: any) {
+function EmptyCategories({ tokens, onAdd }: any) {
   return (
     <Animated.View style={[mkCard(tokens), { alignItems: 'center', paddingVertical: 24 }]}>
       <Text style={{ fontSize: 32, marginBottom: 8 }}>🗂️</Text>
@@ -255,7 +256,7 @@ function EmptyCategories({ tokens }: any) {
         Set up your budget categories to get started
       </Text>
       <TouchableOpacity
-        // TODO(nav): open the category-setup / onboarding flow.
+        onPress={onAdd}
         style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: tokens.teal, alignItems: 'center', justifyContent: 'center' }}
         activeOpacity={0.85}
       >
@@ -317,6 +318,7 @@ function DashboardSkeleton({ tokens }: any) {
 export default function HomeTab() {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { data, isLoading, error, refetch } = useDashboard();
 
   // Guarded view-model values — no direct property access.
@@ -428,7 +430,7 @@ export default function HomeTab() {
                   <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginHorizontal: 16, marginBottom: 10 }}>
                     Category Budgets
                   </Text>
-                  <EmptyCategories tokens={tokens} />
+                  <EmptyCategories tokens={tokens} onAdd={() => navigation.navigate('AddTransaction')} />
                 </>
               )}
             </Animated.View>
@@ -438,7 +440,7 @@ export default function HomeTab() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, marginBottom: 10, marginTop: 8 }}>
                 <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1 }}>Recent</Text>
                 {transactions.length > 0 ? (
-                  <TouchableOpacity activeOpacity={0.7}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('HistoryTab')}>
                     <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: tokens.teal }}>See all →</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -450,7 +452,12 @@ export default function HomeTab() {
                     const amtColor = isIncome ? tokens.success : tokens.danger;
                     const prefix = isIncome ? '+' : '-';
                     return (
-                      <View key={tx.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: i === transactions.length - 1 ? 0 : 16 }}>
+                      <TouchableOpacity
+                        key={tx.id}
+                        activeOpacity={0.6}
+                        onPress={() => navigation.navigate('TxnDetail', { id: tx.id })}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: i === transactions.length - 1 ? 0 : 16 }}
+                      >
                         <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: tokens.surfaceTint, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                           <Text style={{ fontSize: 18 }}>{tx.emoji}</Text>
                         </View>
@@ -459,7 +466,7 @@ export default function HomeTab() {
                           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3 }}>{tx.timeLabel}</Text>
                         </View>
                         <Text style={{ fontFamily: FontFamily.mono, fontSize: 14, color: amtColor }}>{prefix}{fmt(tx.amount)}</Text>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>

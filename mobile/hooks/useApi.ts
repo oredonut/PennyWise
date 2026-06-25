@@ -178,7 +178,7 @@ export function useCategories(): ApiResponse<{ categories: CategorySettings[] }>
 
 export function useTransactions(
   limit = 20
-): ApiResponse<TransactionsPage> & { fetchMore: () => void } {
+): ApiResponse<TransactionsPage> & { fetchMore: () => void; refetch: () => void } {
   const [data, setData] = useState<TransactionsPage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,5 +218,5 @@ export function useTransactions(
     }
   }, [data, limit]);
 
-  return { data, isLoading, error, fetchMore };
+  return { data, isLoading, error, fetchMore, refetch: loadInitial };
 }

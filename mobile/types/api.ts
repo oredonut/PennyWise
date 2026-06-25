@@ -158,3 +158,18 @@ export interface TransactionsPage {
   nextCursor: string | null;
   hasMore: boolean;
 }
+
+// ── Transaction detail (GET/PATCH /api/transactions/[id]) ─────
+// Raw-ish row (amount/occurred_at are numeric/iso as stored). The screen
+// resolves category name/emoji from the categories list and derives sign/title.
+export interface TransactionDetail {
+  id: string;
+  category_id: string | null;
+  amount: number | string;
+  type: TransactionType;
+  merchant_raw: string | null;
+  note: string | null;
+  source: string | null;
+  occurred_at: string;
+  created_at: string;
+}

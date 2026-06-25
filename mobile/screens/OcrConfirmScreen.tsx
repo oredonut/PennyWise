@@ -9,8 +9,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, Image, Modal,
-  Pressable, ActivityIndicator, ScrollView, DeviceEventEmitter,
+  View, Text, TextInput, TouchableOpacity, FlatList, Image,
+  ActivityIndicator, DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -23,6 +23,7 @@ import { isNetworkError } from '../lib/offlineQueue';
 import { Toast } from '../src/components/Toast';
 import { categorize } from '../lib/merchantCategories';
 import { SubHeader } from '../src/components/SubHeader';
+import { CategoryPickerSheet } from '../src/components/CategoryPickerSheet';
 import type { ParseResult } from '../lib/ocr';
 
 type ApiCategory = { id: string; name: string; color?: string | null };
@@ -388,35 +389,13 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}
       />
 
-      {/* Category picker */}
-      <Modal visible={!!pickerRow} transparent animationType="fade" onRequestClose={() => setPickerRow(null)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }} onPress={() => setPickerRow(null)}>
-          <Pressable
-            style={{ backgroundColor: tokens.bg, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: 20, paddingBottom: insets.bottom + 20 }}
-            onPress={() => {}}
-          >
-            <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 16, color: tokens.text1, marginBottom: 16 }}>Choose category</Text>
-            {cats.length === 0 ? (
-              <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text3 }}>No categories set up yet.</Text>
-            ) : (
-              <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {cats.map((c) => (
-                    <TouchableOpacity
-                      key={c.id}
-                      onPress={() => pickerRow && pickCategory(pickerRow, c)}
-                      activeOpacity={0.8}
-                      style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 1, borderColor: tokens.border, backgroundColor: tokens.surface }}
-                    >
-                      <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: tokens.text1 }}>{c.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Category picker (shared component) */}
+      <CategoryPickerSheet
+        visible={!!pickerRow}
+        categories={cats}
+        onSelect={(c) => pickerRow && pickCategory(pickerRow, c)}
+        onClose={() => setPickerRow(null)}
+      />
     </View>
   );
 }

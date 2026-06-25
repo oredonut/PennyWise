@@ -13,6 +13,7 @@ import {
   ActivityIndicator, StyleSheet, DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { useTheme } from '../lib/useTheme';
 import { FontFamily, Radius } from '../tokens';
@@ -79,7 +80,7 @@ export default function AddTransactionScreen({ navigation }: any) {
   const [merchant, setMerchant] = useState('');
   const [note, setNote] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDays, setShowDays] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [recurring, setRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'weekly' | 'monthly'>('monthly');
 
@@ -104,12 +105,6 @@ export default function AddTransactionScreen({ navigation }: any) {
       }
     })();
   }, []);
-
-  const dayOptions = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    return d;
-  });
 
   // ── Submit ──────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
@@ -164,6 +159,7 @@ export default function AddTransactionScreen({ navigation }: any) {
 
     // Signal the dashboard to refresh (carries fresh score/brokeScore/streak).
     DeviceEventEmitter.emit('transactionAdded', result);
+    showToast('Transaction added');
     close();
   };
 
@@ -278,29 +274,20 @@ export default function AddTransactionScreen({ navigation }: any) {
 
             {/* ── Date ── */}
             <Text style={styles.label(tokens)}>Date</Text>
-            <TouchableOpacity onPress={() => setShowDays((v) => !v)} activeOpacity={0.8} style={[styles.input(tokens), { justifyContent: 'center' }]}>
+            <TouchableOpacity onPress={() => setShowPicker(true)} activeOpacity={0.8} style={[styles.input(tokens), { justifyContent: 'center' }]}>
               <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: tokens.text1 }}>{dateLabel(selectedDate)}</Text>
             </TouchableOpacity>
-            {showDays && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: 8 }}>
-                {dayOptions.map((d) => {
-                  const selected = startOfDay(d).getTime() === startOfDay(selectedDate).getTime();
-                  return (
-                    <TouchableOpacity
-                      key={d.toISOString()}
-                      onPress={() => { setSelectedDate(d); setShowDays(false); }}
-                      activeOpacity={0.8}
-                      style={{
-                        paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-                        backgroundColor: selected ? tokens.teal : tokens.surface,
-                        borderWidth: 1, borderColor: selected ? tokens.teal : tokens.border,
-                      }}
-                    >
-                      <Text style={{ fontFamily: FontFamily.body, fontSize: 12, color: selected ? tokens.surface : tokens.text1 }}>{dateLabel(d)}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+            {showPicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                maximumDate={new Date()}
+                onChange={(event, date) => {
+                  // Android closes on pick/dismiss; iOS spinner stays inline.
+                  if (Platform.OS !== 'ios') setShowPicker(false);
+                  if (date && (event.type === 'set' || Platform.OS === 'ios')) setSelectedDate(date);
+                }}
+              />
             )}
 
             {/* ── Recurring ── */}
