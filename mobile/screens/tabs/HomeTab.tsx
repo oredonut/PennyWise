@@ -17,7 +17,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { ScribbleLayer } from '../../src/components/ScribbleLayer';
 import { ErrorState, SkeletonBox, usePulse } from '../../src/components/states';
 import { useTheme }       from '../../lib/useTheme';
-import { FontFamily, Colors } from '../../tokens';
+import { FontFamily, Colors, Radius } from '../../tokens';
 import { formatNaira as fmt } from '../../utils/currency';
 import { greeting, dateLabel } from '../../utils/date';
 import { useDashboard } from '../../hooks/useApi';
@@ -80,7 +80,7 @@ function ScoreRing({ score, tokens, delay = 350 }: { score: number; tokens: any;
 // ── Discipline Score Card ─────────────────────────────────────
 function DisciplineScoreCard({ score, brokeScore, badge, tokens, enterAnim }: any) {
   return (
-    <Animated.View style={[mkCard(tokens), { flexDirection: 'row', alignItems: 'center', gap: 18 }, enterAnim]}>
+    <Animated.View style={[mkCard(tokens), { borderRadius: Radius.xl, flexDirection: 'row', alignItems: 'center', gap: 18 }, enterAnim]}>
       <ScoreRing score={score} tokens={tokens} delay={400} />
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 16, color: tokens.text1, marginBottom: 4 }}>
@@ -154,15 +154,15 @@ function BudgetCard({ budget, tokens, enterAnim }: any) {
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
-          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.text1, fontWeight: '700' }}>{fmt(budget?.total ?? 0)}</Text>
+          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.text1 }}>{fmt(budget?.total ?? 0)}</Text>
           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3, marginTop: 2 }}>Budget</Text>
         </View>
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.text1, fontWeight: '700' }}>{fmt(budget?.spent ?? 0)}</Text>
+          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.text1 }}>{fmt(budget?.spent ?? 0)}</Text>
           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3, marginTop: 2 }}>Spent</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.teal, fontWeight: '700' }}>{fmt(budget?.left ?? 0)}</Text>
+          <Text style={{ fontFamily: FontFamily.mono, fontSize: 17, color: tokens.teal }}>{fmt(budget?.left ?? 0)}</Text>
           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3, marginTop: 2 }}>Left</Text>
         </View>
       </View>
@@ -192,7 +192,7 @@ function AlertBanner({ alert, tokens, enterAnim }: any) {
       </Svg>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text1, lineHeight: 18 }}>{alert.message}</Text>
-        <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.amber, marginTop: 3, fontWeight: '600' }}>{alert.amountLine}</Text>
+        <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.amber, marginTop: 3 }}>{alert.amountLine}</Text>
       </View>
     </Animated.View>
   );
@@ -293,8 +293,8 @@ function DashboardSkeleton({ tokens }: any) {
   );
   return (
     <View style={{ paddingHorizontal: 16 }}>
-      {/* Score card: circle + two lines */}
-      <View style={[mkCard(tokens), { flexDirection: 'row', alignItems: 'center', gap: 18, marginHorizontal: 0 }]}>
+      {/* Score card: circle + two lines (hero radius --r-xl, matches the real card) */}
+      <View style={[mkCard(tokens), { borderRadius: Radius.xl, flexDirection: 'row', alignItems: 'center', gap: 18, marginHorizontal: 0 }]}>
         <SkeletonBox pulse={pulse} style={{ width: 82, height: 82, borderRadius: 41 }} />
         <View style={{ flex: 1, gap: 10 }}>
           <SkeletonBox pulse={pulse} style={{ height: 16, width: '70%' }} />
@@ -411,7 +411,7 @@ export default function HomeTab() {
               {DAYS.map((d, idx) => {
                 const isToday = idx === activeDayIndex;
                 return (
-                  <View key={idx} style={{ height: 36, borderRadius: 8, backgroundColor: isToday ? tokens.teal : tokens.tealLight + '40', alignItems: 'center', justifyContent: 'center', flex: 1, marginHorizontal: 3 }}>
+                  <View key={idx} style={{ height: 36, borderRadius: 8, backgroundColor: isToday ? tokens.teal : tokens.tealLightOverlay, alignItems: 'center', justifyContent: 'center', flex: 1, marginHorizontal: 3 }}>
                     <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: isToday ? '#fff' : tokens.teal }}>{d}</Text>
                   </View>
                 );
@@ -466,7 +466,7 @@ export default function HomeTab() {
                           <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 14, color: tokens.text1, marginBottom: 2 }}>{tx.name}</Text>
                           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3 }}>{tx.timeLabel}</Text>
                         </View>
-                        <Text style={{ fontFamily: FontFamily.mono, fontSize: 14, color: amtColor, fontWeight: '700' }}>{prefix}{fmt(tx.amount)}</Text>
+                        <Text style={{ fontFamily: FontFamily.mono, fontSize: 14, color: amtColor }}>{prefix}{fmt(tx.amount)}</Text>
                       </View>
                     );
                   })}

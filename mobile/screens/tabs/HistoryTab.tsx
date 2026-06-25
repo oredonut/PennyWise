@@ -41,7 +41,7 @@ export default function HistoryTab() {
           <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 14, color: tokens.text1, marginBottom: 2 }}>{item.name}</Text>
           <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3 }}>{item.timeLabel}</Text>
         </View>
-        <Text style={{ fontFamily: FontFamily.mono, fontSize: 14, color: amtColor, fontWeight: '700' }}>
+        <Text style={{ fontFamily: FontFamily.mono, fontSize: 14, color: amtColor }}>
           {prefix}{fmt(item.amount)}
         </Text>
       </View>

@@ -32,6 +32,7 @@ import { supabase } from '../../lib/supabase';
 import { Radius, FontFamily } from '../../tokens';
 import { useTheme } from '../../lib/useTheme';
 import { ScribbleLayer } from '../../src/components/ScribbleLayer';
+import { SubHeader } from '../../src/components/SubHeader';
 
 type RootStackParamList = {
   Otp: { email: string };
@@ -135,9 +136,7 @@ export default function OtpScreen({ navigation, route }: Props) {
 
       <View style={[styles.content, { paddingTop: insets.top + 48 }]}>
         {/* Back */}
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} style={styles.backRow}>
-          <Text style={{ fontSize: 22, color: tokens.text2 }}>‹</Text>
-        </TouchableOpacity>
+        <SubHeader onBack={() => navigation.goBack()} style={{ marginBottom: 24 }} />
 
         {/* Heading */}
         <Text style={[styles.heading, { color: tokens.text1 }]}>Check your inbox 📬</Text>
@@ -219,7 +218,6 @@ export default function OtpScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { flex: 1, paddingHorizontal: 24, zIndex: 1 },
-  backRow: { alignSelf: 'flex-start', marginBottom: 24 },
   heading: {
     fontFamily: FontFamily.display,
     fontSize: 26,

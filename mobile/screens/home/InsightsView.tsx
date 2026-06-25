@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
-import { FontFamily, Colors } from '../../tokens';
+import { FontFamily, Colors, Radius } from '../../tokens';
 import { InsightsData, ScoreTrendPoint } from '../../types/api';
 import { useTheme } from '../../lib/useTheme';
 import { formatNaira as fmt } from '../../utils/currency';
+import { SegmentedControl } from '../../src/components/SegmentedControl';
 
 // Discipline-Score amber is the only sanctioned amber (score-threshold colouring).
 const AMBER = Colors.amber;
@@ -141,44 +142,11 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
           <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1 }}>
             Score Trend
           </Text>
-          <View style={{ flexDirection: 'row', backgroundColor: tokens.surfaceTint, borderRadius: 8, padding: 3 }}>
-            <TouchableOpacity
-              onPress={() => onRangeChange('7d')}
-              style={[
-                styles.rangeTab,
-                range === '7d' && { backgroundColor: tokens.teal },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.rangeTabText,
-                  { color: tokens.text2 },
-                  range === '7d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
-                ]}
-              >
-                7d
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onRangeChange('30d')}
-              style={[
-                styles.rangeTab,
-                range === '30d' && { backgroundColor: tokens.teal },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.rangeTabText,
-                  { color: tokens.text2 },
-                  range === '30d' && { color: tokens.surface, fontFamily: FontFamily.bodySemiBold },
-                ]}
-              >
-                30d
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <SegmentedControl<'7d' | '30d'>
+            options={[{ value: '7d', label: '7d' }, { value: '30d', label: '30d' }]}
+            value={range}
+            onChange={onRangeChange}
+          />
         </View>
 
         {/* Score Trend SVG Line Chart */}
@@ -335,7 +303,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
 
             {/* Total Text Overlay inside the donut - Currency Rule: JetBrains Mono */}
             <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.text1, fontWeight: '700' }}>
+              <Text style={{ fontFamily: FontFamily.mono, fontSize: 13, color: tokens.text1 }}>
                 {fmt(data.totalSpent)}
               </Text>
               <Text style={{ fontFamily: FontFamily.body, fontSize: 8, color: tokens.text3, letterSpacing: 0.5 }}>
@@ -355,7 +323,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
                   </Text>
                 </View>
                 {/* Currency values aligned with Cabinets */}
-                <Text style={{ fontFamily: FontFamily.mono, fontSize: 11, color: tokens.text1, fontWeight: '600' }}>
+                <Text style={{ fontFamily: FontFamily.mono, fontSize: 11, color: tokens.text1 }}>
                   {item.percentage}%
                 </Text>
               </View>
@@ -404,7 +372,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
             <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3, marginBottom: 4 }}>
               {data.comparison.lastMonthName}
             </Text>
-            <Text style={{ fontFamily: FontFamily.mono, fontSize: 16, color: tokens.text2, fontWeight: '600' }}>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 16, color: tokens.text2 }}>
               {fmt(data.comparison.lastMonthSpent)}
             </Text>
           </View>
@@ -412,7 +380,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
           {/* Change pill */}
           <View style={{ alignItems: 'center', paddingHorizontal: 10 }}>
             <Text style={{ fontSize: 16, color: tokens.success, marginBottom: 2 }}>↓</Text>
-            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: tokens.success, fontWeight: '700' }}>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 12, color: tokens.success }}>
               {fmt(data.comparison.difference)}
             </Text>
             <Text style={{ fontFamily: FontFamily.body, fontSize: 10, color: tokens.success }}>
@@ -425,7 +393,7 @@ export default function InsightsView({ data, tokens, range, onRangeChange }: Ins
             <Text style={{ fontFamily: FontFamily.body, fontSize: 11, color: tokens.text3, marginBottom: 4 }}>
               {data.comparison.currentMonthName}
             </Text>
-            <Text style={{ fontFamily: FontFamily.mono, fontSize: 16, color: tokens.teal, fontWeight: '700' }}>
+            <Text style={{ fontFamily: FontFamily.mono, fontSize: 16, color: tokens.teal }}>
               {fmt(data.comparison.currentMonthSpent)}
             </Text>
           </View>
@@ -464,7 +432,7 @@ function SvgText(props: any) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 12,
@@ -474,15 +442,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
-  },
-  rangeTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  rangeTabText: {
-    fontFamily: FontFamily.body,
-    fontSize: 11,
   },
   legendRow: {
     flexDirection: 'row',
@@ -530,7 +489,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 14,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 24,

@@ -1,8 +1,12 @@
+import { Radius } from '../../tokens';
+
 // Shared card style factory — extracted from the old HomeScreen so Home and
 // Profile tabs share one definition instead of duplicating it.
+// Default content-card radius is --r-lg (20). The Discipline Score card is the
+// only card that overrides this to --r-xl (28); see design.md §4 radius rules.
 export const mkCard = (tokens: any) => ({
   backgroundColor: tokens.surface,
-  borderRadius: 16,
+  borderRadius: Radius.lg,
   padding: 16,
   marginHorizontal: 16,
   marginBottom: 12,

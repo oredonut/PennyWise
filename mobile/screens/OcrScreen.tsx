@@ -24,6 +24,7 @@ import { FontFamily, Radius } from '../tokens';
 import { extractFromImage } from '../lib/ocr';
 import type { ParseResult } from '../lib/ocr';
 import { Toast } from '../src/components/Toast';
+import { SubHeader } from '../src/components/SubHeader';
 
 type OcrState = 'idle' | 'picked' | 'extracting' | 'done' | 'error';
 type ErrorKind = 'empty' | 'ocr_unavailable' | 'network' | 'generic';
@@ -174,14 +175,7 @@ export default function OcrScreen({ navigation }: any) {
 
   // ── Header ───────────────────────────────────────────────────
   const Header = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-      <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-        <Text style={{ fontSize: 22, color: tokens.text2 }}>‹</Text>
-      </TouchableOpacity>
-      <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 20, color: tokens.text1 }}>
-        Snap receipt
-      </Text>
-    </View>
+    <SubHeader title="Snap receipt" onBack={() => navigation.goBack()} style={{ marginBottom: 24 }} />
   );
 
   // ── Per-state bodies ─────────────────────────────────────────
@@ -313,7 +307,7 @@ function OptionCard({ emoji, label, sub, onPress, tokens }: { emoji: string; lab
         flexDirection: 'row', alignItems: 'center', gap: 14,
         backgroundColor: tokens.surface,
         borderWidth: 1, borderColor: tokens.border,
-        borderRadius: Radius.lg, padding: 18,
+        borderRadius: Radius.md, padding: 18,
       }}
     >
       <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: tokens.tealLight, alignItems: 'center', justifyContent: 'center' }}>

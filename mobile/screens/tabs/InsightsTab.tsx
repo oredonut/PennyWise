@@ -19,9 +19,9 @@ function InsightsSkeleton() {
   return (
     <View style={{ paddingHorizontal: 16 }}>
       <SkeletonBox pulse={pulse} style={{ height: 28, width: '45%', borderRadius: 8, marginBottom: 20, marginTop: 12 }} />
-      <SkeletonBox pulse={pulse} style={{ height: 170, borderRadius: 16, marginBottom: 12 }} />
-      <SkeletonBox pulse={pulse} style={{ height: 160, borderRadius: 16, marginBottom: 12 }} />
-      <SkeletonBox pulse={pulse} style={{ height: 90, borderRadius: 16 }} />
+      <SkeletonBox pulse={pulse} style={{ height: 170, borderRadius: 20, marginBottom: 12 }} />
+      <SkeletonBox pulse={pulse} style={{ height: 160, borderRadius: 20, marginBottom: 12 }} />
+      <SkeletonBox pulse={pulse} style={{ height: 90, borderRadius: 20 }} />
     </View>
   );
 }

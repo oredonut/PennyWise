@@ -7,7 +7,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import { useTheme } from '../../lib/useTheme';
-import { FontFamily } from '../../tokens';
+import { FontFamily, Radius } from '../../tokens';
 
 /** A looping pulse value (0.3 → 0.7) for skeleton placeholders. */
 export function usePulse(): Animated.Value {
@@ -56,5 +56,5 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 420, paddingHorizontal: 24 },
-  card: { alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 24, width: '100%' },
+  card: { alignItems: 'center', borderRadius: Radius.lg, borderWidth: 1, padding: 24, width: '100%' },
 });

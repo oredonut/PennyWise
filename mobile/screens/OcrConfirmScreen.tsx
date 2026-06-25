@@ -22,6 +22,7 @@ import { apiGet, apiPost } from '../hooks/useApi';
 import { isNetworkError } from '../lib/offlineQueue';
 import { Toast } from '../src/components/Toast';
 import { categorize } from '../lib/merchantCategories';
+import { SubHeader } from '../src/components/SubHeader';
 import type { ParseResult } from '../lib/ocr';
 
 type ApiCategory = { id: string; name: string; color?: string | null };
@@ -224,7 +225,7 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
     const lowConf = item.confidence !== 'high';
 
     return (
-      <View style={{ backgroundColor: tokens.surface, borderWidth: 1, borderColor: tokens.border, borderRadius: Radius.lg, padding: 14, marginBottom: 12 }}>
+      <View style={{ backgroundColor: tokens.surface, borderWidth: 1, borderColor: tokens.border, borderRadius: Radius.md, padding: 14, marginBottom: 12 }}>
         {/* Line 1 — flag · emoji · merchant · delete */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {lowConf ? (
@@ -325,14 +326,13 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
   // ── Header / Footer ──────────────────────────────────────────
   const ListHeader = (
     <View style={{ marginBottom: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-          <Text style={{ fontSize: 22, color: tokens.text2 }}>‹</Text>
-        </TouchableOpacity>
-        {imageUri ? (
+      <SubHeader
+        onBack={() => navigation.goBack()}
+        right={imageUri ? (
           <Image source={{ uri: imageUri }} style={{ width: 80, height: 80, borderRadius: Radius.md, backgroundColor: tokens.surfaceTint }} resizeMode="cover" />
-        ) : null}
-      </View>
+        ) : undefined}
+        style={{ marginBottom: 18 }}
+      />
 
       <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 20, color: tokens.text1, marginBottom: 8 }}>
         We found {rows.length} transaction{rows.length === 1 ? '' : 's'} — correct?
@@ -353,7 +353,7 @@ export default function OcrConfirmScreen({ navigation, route }: any) {
     <View style={{ marginTop: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text3 }}>Total</Text>
-        <Text style={{ fontFamily: FontFamily.mono, fontSize: 18, color: tokens.text1, fontWeight: '700' }}>{formatNaira(debitTotal)}</Text>
+        <Text style={{ fontFamily: FontFamily.mono, fontSize: 18, color: tokens.text1 }}>{formatNaira(debitTotal)}</Text>
       </View>
 
       <TouchableOpacity

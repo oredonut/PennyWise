@@ -14,6 +14,7 @@ import { FontFamily } from '../../tokens';
 import { supabase } from '../../lib/supabase';
 import { useProfile, useStreaks, useBadges } from '../../hooks/useApi';
 import { mkCard } from './cardStyle';
+import { SegmentedControl } from '../../src/components/SegmentedControl';
 
 export default function ProfileTab({ navigation }: any) {
   const { tokens, themeMode, setThemeMode } = useTheme();
@@ -34,12 +35,6 @@ export default function ProfileTab({ navigation }: any) {
   const currentStreak = streaks?.currentStreak ?? 0;
   const longestStreak = streaks?.longestStreak ?? 0;
   const badges = badgesData?.badges ?? [];
-
-  const modes = [
-    { id: 'light', label: 'Light Mode', icon: '☀️' },
-    { id: 'dark', label: 'Dark Mode', icon: '🌙' },
-    { id: 'system', label: 'System Default', icon: '⚙️' },
-  ];
 
   const handleLogout = async () => {
     try {
@@ -121,7 +116,7 @@ export default function ProfileTab({ navigation }: any) {
                 return (
                   <View key={b.id} style={{
                     width: '47%',
-                    backgroundColor: tokens.surfaceTint + '40',
+                    backgroundColor: tokens.surfaceTintOverlay,
                     borderRadius: 12, borderWidth: 1, borderColor: tokens.border,
                     padding: 10, alignItems: 'center',
                     opacity: isUnlocked ? 1 : 0.4,
@@ -149,7 +144,7 @@ export default function ProfileTab({ navigation }: any) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View>
                 <Text style={{ fontFamily: FontFamily.body, fontSize: 12, color: tokens.text2 }}>Your current spending cap:</Text>
-                <Text style={{ fontFamily: FontFamily.mono, fontSize: 18, color: tokens.teal, fontWeight: '700', marginTop: 2 }}>₦{budgetVal}</Text>
+                <Text style={{ fontFamily: FontFamily.mono, fontSize: 18, color: tokens.teal, marginTop: 2 }}>₦{budgetVal}</Text>
               </View>
               <TouchableOpacity
                 style={{ backgroundColor: tokens.surfaceTint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: tokens.border }}
@@ -165,23 +160,16 @@ export default function ProfileTab({ navigation }: any) {
           <View style={mkCard(tokens)}>
             <Text style={{ fontFamily: FontFamily.displayXBold, fontSize: 15, color: tokens.text1, marginBottom: 6 }}>Theme Override</Text>
             <Text style={{ fontFamily: FontFamily.body, fontSize: 13, color: tokens.text2, marginBottom: 16 }}>Choose how PennyWise displays.</Text>
-            {modes.map(mode => {
-              const isActive = themeMode === mode.id;
-              return (
-                <TouchableOpacity
-                  key={mode.id}
-                  onPress={() => setThemeMode(mode.id as 'light' | 'dark' | 'system')}
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: mode.id === 'system' ? 0 : 1, borderBottomColor: tokens.border }}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ fontSize: 18 }}>{mode.icon}</Text>
-                    <Text style={{ fontFamily: isActive ? FontFamily.bodySemiBold : FontFamily.body, fontSize: 15, color: tokens.text1 }}>{mode.label}</Text>
-                  </View>
-                  {isActive && <Text style={{ color: tokens.teal, fontSize: 16, fontFamily: FontFamily.displayXBold }}>✓</Text>}
-                </TouchableOpacity>
-              );
-            })}
+            <SegmentedControl<'light' | 'dark' | 'system'>
+              options={[
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+                { value: 'system', label: 'System' },
+              ]}
+              value={themeMode}
+              onChange={setThemeMode}
+              fullWidth
+            />
           </View>
 
           {/* ── 6. Log Out ── */}

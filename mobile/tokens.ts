@@ -15,6 +15,10 @@ export const Colors = {
   success: '#16a34a',
   successLight: '#dcfce7',
   doodle: '#c9bfb5',
+  // Documented translucent overlays (≈25% alpha, the old ad-hoc `+ '40'`).
+  // Used for subtle fills like the inactive weekday strip / badge tiles.
+  tealLightOverlay: '#ccfbf140',
+  surfaceTintOverlay: '#f3ede440',
 } as const;
 
 // Warm dark mode — never cold grey. bg #0f0e0c per design spec.
@@ -37,6 +41,9 @@ export const ColorsDark = {
   success: '#16a34a',
   successLight: '#0a2a14',
   doodle: '#3d3730',
+  // Dark-mode counterparts of the translucent overlays (≈25% alpha).
+  tealLightOverlay: '#0d333040',
+  surfaceTintOverlay: '#25221940',
 } as const;
 
 // Structural token type both palettes satisfy (keys identical, values = hex strings).

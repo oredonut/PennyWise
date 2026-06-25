@@ -20,6 +20,8 @@ import { apiGet, apiPost } from '../hooks/useApi';
 import { enqueue, isNetworkError } from '../lib/offlineQueue';
 import { showToast } from '../lib/toast';
 import { SkeletonBox, usePulse } from '../src/components/states';
+import { SegmentedControl } from '../src/components/SegmentedControl';
+import { Toggle } from '../src/components/Toggle';
 
 type ApiCategory = { id: string; name: string; color?: string | null };
 type SubmitResult = { score?: number; brokeScore?: number; streak?: number };
@@ -165,14 +167,6 @@ export default function AddTransactionScreen({ navigation }: any) {
     close();
   };
 
-  const segActive = (on: boolean) => ({
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center' as const,
-    backgroundColor: on ? tokens.teal : 'transparent',
-  });
-
   return (
     <View style={{ flex: 1, justifyContent: 'flex-end' }}>
       <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} onPress={close} />
@@ -199,19 +193,18 @@ export default function AddTransactionScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            <View style={{ flexDirection: 'row', backgroundColor: tokens.surfaceTint, borderRadius: 10, padding: 3, marginBottom: 22 }}>
-              <TouchableOpacity style={segActive(activeType === 'expense')} onPress={() => setActiveType('expense')} activeOpacity={0.85}>
-                <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: activeType === 'expense' ? tokens.surface : tokens.text2 }}>Expense</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={segActive(activeType === 'income')} onPress={() => setActiveType('income')} activeOpacity={0.85}>
-                <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: activeType === 'income' ? tokens.surface : tokens.text2 }}>Income</Text>
-              </TouchableOpacity>
-            </View>
+            <SegmentedControl<'expense' | 'income'>
+              options={[{ value: 'expense', label: 'Expense' }, { value: 'income', label: 'Income' }]}
+              value={activeType}
+              onChange={setActiveType}
+              fullWidth
+              style={{ marginBottom: 22 }}
+            />
 
             {/* ── Amount ── */}
             <TouchableOpacity activeOpacity={1} onPress={() => amountInput.current?.focus()} style={{ alignItems: 'center', marginBottom: 24 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontFamily: FontFamily.mono, fontSize: 40, color: tokens.text1, fontWeight: '700' }}>₦</Text>
+                <Text style={{ fontFamily: FontFamily.mono, fontSize: 40, color: tokens.text1 }}>₦</Text>
                 <TextInput
                   ref={amountInput}
                   value={formatDigits(amountDigits)}
@@ -219,7 +212,7 @@ export default function AddTransactionScreen({ navigation }: any) {
                   placeholder="0"
                   placeholderTextColor={tokens.text3}
                   keyboardType="number-pad"
-                  style={{ fontFamily: FontFamily.mono, fontSize: 40, color: tokens.text1, fontWeight: '700', minWidth: 60, padding: 0 }}
+                  style={{ fontFamily: FontFamily.mono, fontSize: 40, color: tokens.text1, minWidth: 60, padding: 0 }}
                 />
               </View>
             </TouchableOpacity>
@@ -311,16 +304,10 @@ export default function AddTransactionScreen({ navigation }: any) {
             )}
 
             {/* ── Recurring ── */}
-            <TouchableOpacity
-              onPress={() => setRecurring((v) => !v)}
-              activeOpacity={0.8}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18 }}
-            >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18 }}>
               <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: tokens.text1 }}>Repeat this?</Text>
-              <View style={{ width: 46, height: 28, borderRadius: 999, backgroundColor: recurring ? tokens.teal : tokens.surfaceTint, padding: 3, justifyContent: 'center' }}>
-                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: tokens.surface, alignSelf: recurring ? 'flex-end' : 'flex-start' }} />
-              </View>
-            </TouchableOpacity>
+              <Toggle value={recurring} onChange={setRecurring} />
+            </View>
             {recurring && (
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                 {(['weekly', 'monthly'] as const).map((f) => {
@@ -331,7 +318,7 @@ export default function AddTransactionScreen({ navigation }: any) {
                       onPress={() => setRecurringFrequency(f)}
                       activeOpacity={0.8}
                       style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+                        flex: 1, paddingVertical: 10, borderRadius: Radius.md, alignItems: 'center',
                         backgroundColor: selected ? tokens.tealLight : tokens.surface,
                         borderWidth: selected ? 2 : 1, borderColor: selected ? tokens.teal : tokens.border,
                       }}
