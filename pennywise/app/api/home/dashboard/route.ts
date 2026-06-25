@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/supabase/api-auth'
-import { computeDisciplineScore } from '@/lib/score'
+import { computeDisciplineScore } from '@/lib/scoring/compute'
 import { getUtcMonthRange } from '@/lib/time'
 import {
   categoryEmoji,
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     if (authError || !user) return err('Unauthorized', 'unauthorized', 401)
 
     const today = new Date()
-    const { startIso, endIso, daysElapsed, daysInMonth, todayIsoDate } = getUtcMonthRange(today)
+    const { startIso, endIso, todayIsoDate } = getUtcMonthRange(today)
 
     const weekDays = currentWeekDays(today)
     const weekStartIso = weekDays[0].date.toISOString()
@@ -122,14 +122,23 @@ export async function GET(request: Request) {
     const totalBudget = categoryRows.reduce((sum, c) => sum + Number(c.monthly_budget), 0)
 
     // ── Discipline score (today's log, else live) ────────────────
-    const liveScore = computeDisciplineScore(
-      categoryRows.map((c) => ({
-        monthly_budget: Number(c.monthly_budget),
-        spent_this_month: spentByCategory.get(c.id) ?? 0,
-      })),
-      daysElapsed,
-      daysInMonth
-    )
+    // SINGLE SOURCE OF TRUTH (lib/scoring/compute.ts → _shared/scoring.ts): the
+    // same formula the live recompute and nightly cron write into daily_logs, so
+    // this live fallback can't diverge from the stored value. The formula divides
+    // by totalBudget, so guard the no-budget case (mirrors recompute.ts, which
+    // produces no score when there are no budgets).
+    const liveScore =
+      categoryRows.length > 0 && totalBudget > 0
+        ? computeDisciplineScore({
+            totalSpent,
+            totalBudget,
+            streakDays: streakResult.data?.current_streak ?? 0,
+            categories: categoryRows.map((c) => ({
+              spent: spentByCategory.get(c.id) ?? 0,
+              budget: Number(c.monthly_budget),
+            })),
+          })
+        : 0
     const loggedScoreRaw = dailyLogResult.data?.discipline_score
     const parsedLogged = loggedScoreRaw == null ? null : Number(loggedScoreRaw)
     const scoreIsLive = parsedLogged == null || !Number.isFinite(parsedLogged)

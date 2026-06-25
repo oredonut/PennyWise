@@ -1,5 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import type { Database } from '../../../types/database.ts'
+// SINGLE SOURCE OF TRUTH — the same discipline-score math the live recompute path
+// (lib/scoring/recompute.ts) uses. Do NOT reimplement the formula here.
+import { computeDisciplineScore } from '../_shared/scoring.ts'
 
 type CategoryRow = {
   id: string
@@ -22,76 +25,8 @@ type UserRow = {
   id: string
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
 function getUtcDateKey(reference = new Date()): string {
   return reference.toISOString().slice(0, 10)
-}
-
-function getUtcMonthRange(reference = new Date()) {
-  const year = reference.getUTCFullYear()
-  const month = reference.getUTCMonth()
-  const start = new Date(Date.UTC(year, month, 1))
-  const end = new Date(Date.UTC(year, month + 1, 1))
-  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-
-  return {
-    startIso: start.toISOString(),
-    endIso: end.toISOString(),
-    daysElapsed: clamp(reference.getUTCDate(), 1, daysInMonth),
-    daysInMonth,
-    todayIsoDate: getUtcDateKey(reference),
-  }
-}
-
-function toFiniteNumber(value: string | number | null | undefined): number {
-  const parsed = typeof value === 'number' ? value : Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
-/**
- * KEEP-IN-SYNC with `lib/score.ts`.
- */
-function computeDisciplineScore(
-  categories: Array<{ monthly_budget: number; spent_this_month: number }>,
-  daysElapsed: number,
-  daysInMonth: number
-): number {
-  const safeDaysElapsed = clamp(Math.floor(Number.isFinite(daysElapsed) ? daysElapsed : 1), 1, Math.max(1, Math.floor(Number.isFinite(daysInMonth) ? daysInMonth : 1)))
-  const safeDaysInMonth = Math.max(1, Math.floor(Number.isFinite(daysInMonth) ? daysInMonth : 1))
-
-  const normalizedCategories = categories.map((category) => ({
-    monthlyBudget: Math.max(0, Number.isFinite(category.monthly_budget) ? category.monthly_budget : 0),
-    spentThisMonth: Math.max(0, Number.isFinite(category.spent_this_month) ? category.spent_this_month : 0),
-  }))
-
-  const totalBudget = normalizedCategories.reduce((sum, category) => sum + category.monthlyBudget, 0)
-  if (totalBudget <= 0) {
-    const hasSpend = normalizedCategories.some((category) => category.spentThisMonth > 0)
-    return hasSpend ? 0 : 100
-  }
-
-  const weightedScore = normalizedCategories.reduce((sum, category) => {
-    if (category.monthlyBudget <= 0) {
-      return sum
-    }
-
-    const proratedBudget = (category.monthlyBudget * safeDaysElapsed) / safeDaysInMonth
-    let categoryScore = 100
-
-    if (category.spentThisMonth > proratedBudget) {
-      const overspendBase = Math.max(proratedBudget, 1)
-      const overspendRatio = (category.spentThisMonth - proratedBudget) / overspendBase
-      categoryScore = clamp(100 - overspendRatio * 100, 0, 100)
-    }
-
-    const weight = category.monthlyBudget / totalBudget
-    return sum + categoryScore * weight
-  }, 0)
-
-  return Math.round(clamp(weightedScore, 0, 100))
 }
 
 function getLastLoggedDate(value: string | null): string | null {
@@ -126,8 +61,11 @@ Deno.serve(async () => {
 
   try {
     const supabase = createServiceClient()
-    const today = new Date()
-    const month = getUtcMonthRange(today)
+    const now = new Date()
+    // Mirror lib/scoring/recompute.ts exactly: calendar-month window keyed on the
+    // UTC date, lower bound only, using created_at.
+    const today = getUtcDateKey(now)
+    const monthStart = `${today.slice(0, 7)}-01T00:00:00Z`
 
     const { data: users, error: usersError } = await supabase.from('users').select('id')
     if (usersError) {
@@ -147,8 +85,7 @@ Deno.serve(async () => {
             .from('transactions')
             .select('category_id, amount, created_at')
             .eq('user_id', user.id)
-            .gte('created_at', month.startIso)
-            .lt('created_at', month.endIso),
+            .gte('created_at', monthStart),
           supabase
             .from('streaks')
             .select('current_streak, longest_streak, last_logged_at')
@@ -158,7 +95,7 @@ Deno.serve(async () => {
             .from('daily_logs')
             .select('id')
             .eq('user_id', user.id)
-            .eq('date', month.todayIsoDate)
+            .eq('date', today)
             .maybeSingle(),
         ])
 
@@ -167,52 +104,64 @@ Deno.serve(async () => {
         if (streakResult.error) throw new Error(streakResult.error.message)
         if (todayLogResult.error) throw new Error(todayLogResult.error.message)
 
-        let totalSpent = 0
+        // ── Spend aggregation (this month) — identical to recompute.ts ──
         const spentByCategory = new Map<string, number>()
-        const todayHasTransactions = (transactionsResult.data ?? []).some((transaction) =>
-          getUtcDateKey(new Date((transaction as TransactionRow).created_at)) === month.todayIsoDate
-        )
-
+        let totalSpent = 0
+        let todayHasTransactions = false
         for (const transaction of transactionsResult.data ?? []) {
           const typedTransaction = transaction as TransactionRow
-          const amount = toFiniteNumber(typedTransaction.amount)
+          const amount = parseFloat(typedTransaction.amount)
+          if (!Number.isFinite(amount)) continue
           totalSpent += amount
-          if (!typedTransaction.category_id) continue
-          spentByCategory.set(
-            typedTransaction.category_id,
-            (spentByCategory.get(typedTransaction.category_id) ?? 0) + amount
-          )
+          if (typedTransaction.category_id) {
+            spentByCategory.set(
+              typedTransaction.category_id,
+              (spentByCategory.get(typedTransaction.category_id) ?? 0) + amount
+            )
+          }
+          if (getUtcDateKey(new Date(typedTransaction.created_at)) === today) {
+            todayHasTransactions = true
+          }
         }
 
-        const scoreCategories = (categoriesResult.data ?? []).map((category) => {
-          const typedCategory = category as CategoryRow
-          return {
-            monthly_budget: toFiniteNumber(typedCategory.monthly_budget),
-            spent_this_month: spentByCategory.get(typedCategory.id) ?? 0,
-          }
-        })
-
-        const disciplineScore = computeDisciplineScore(scoreCategories, month.daysElapsed, month.daysInMonth)
-
-        const { error: logUpsertError } = await supabase
-          .from('daily_logs')
-          .upsert(
-            {
-              user_id: user.id,
-              date: month.todayIsoDate,
-              discipline_score: String(disciplineScore),
-              total_spent: String(totalSpent),
-            },
-            { onConflict: 'user_id,date' }
-          )
-        if (logUpsertError) throw new Error(logUpsertError.message)
-
+        // ── Discipline score (needs budgets; null when there are none) ──
+        const catList = (categoriesResult.data ?? []) as CategoryRow[]
         const previousStreak = (streakResult.data ?? {
           current_streak: 0,
           longest_streak: 0,
           last_logged_at: null,
         }) as StreakRow
 
+        const totalBudget = catList.reduce((sum, c) => sum + parseFloat(c.monthly_budget), 0)
+        let score: number | null = null
+        if (catList.length > 0 && totalBudget > 0) {
+          score = Math.round(
+            computeDisciplineScore({
+              totalSpent,
+              totalBudget,
+              streakDays: previousStreak.current_streak ?? 0,
+              categories: catList.map((c) => ({
+                spent: spentByCategory.get(c.id) ?? 0,
+                budget: parseFloat(c.monthly_budget),
+              })),
+            })
+          )
+        }
+
+        const { error: logUpsertError } = await supabase
+          .from('daily_logs')
+          .upsert(
+            {
+              user_id: user.id,
+              date: today,
+              discipline_score: score == null ? null : String(score),
+              total_spent: String(totalSpent),
+            },
+            { onConflict: 'user_id,date' }
+          )
+        if (logUpsertError) throw new Error(logUpsertError.message)
+
+        // ── Streak transition ──
         // KEEP-IN-SYNC with lib/scoring/recompute.ts: the live POST
         // /api/transactions path runs this exact streak transition inline.
         let currentStreak = previousStreak.current_streak
@@ -220,10 +169,10 @@ Deno.serve(async () => {
         const lastLoggedDate = getLastLoggedDate(previousStreak.last_logged_at)
 
         if (todayHasTransactions && !todayLogResult.data) {
-          if (lastLoggedDate && dayDifference(lastLoggedDate, month.todayIsoDate) === 1) {
+          if (lastLoggedDate && dayDifference(lastLoggedDate, today) === 1) {
             currentStreak += 1
           } else {
-            currentStreak = currentStreak > 0 ? 1 : 1
+            currentStreak = 1
           }
 
           longestStreak = Math.max(longestStreak, currentStreak)
@@ -232,12 +181,12 @@ Deno.serve(async () => {
               user_id: user.id,
               current_streak: currentStreak,
               longest_streak: longestStreak,
-              last_logged_at: today.toISOString(),
+              last_logged_at: now.toISOString(),
             },
             { onConflict: 'user_id' }
           )
           if (streakUpsertError) throw new Error(streakUpsertError.message)
-        } else if (lastLoggedDate && dayDifference(lastLoggedDate, month.todayIsoDate) > 1) {
+        } else if (lastLoggedDate && dayDifference(lastLoggedDate, today) > 1) {
           const { error: streakResetError } = await supabase.from('streaks').upsert(
             {
               user_id: user.id,

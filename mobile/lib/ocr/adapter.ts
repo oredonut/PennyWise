@@ -23,6 +23,10 @@ function cornersToBounding(corners: Array<{ x: number; y: number }>): OcrBoundin
 }
 
 export function adaptMlkitResult(raw: any[]): OcrBlock[] {
+  // `detectFromUri` can return null/undefined (or a non-array) for a blank or
+  // unreadable image. Guard so callers get an empty parse — which flows into
+  // the "no transactions found" path — rather than a TypeError from flatMap.
+  if (!Array.isArray(raw)) return [];
   return raw.flatMap((result) =>
     (result.blocks ?? [result]).map((block: any) => ({
       text: block.text ?? block.resultText ?? '',

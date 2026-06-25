@@ -25,6 +25,7 @@ export default function MainTabs() {
 
   return (
     <Tab.Navigator
+      id="MainTabs"
       // 'none' → Android hardware back from any tab backgrounds the app instead
       // of navigating between tabs (tabs are not a back-stack).
       backBehavior="none"

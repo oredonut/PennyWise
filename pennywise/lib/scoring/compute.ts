@@ -1,34 +1,7 @@
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-interface Category {
-  spent: number
-  budget: number
-}
-
-interface ScoreInput {
-  totalSpent: number
-  totalBudget: number
-  streakDays: number
-  categories: Category[]
-}
-
-export function computeDisciplineScore({
-  totalSpent,
-  totalBudget,
-  streakDays,
-  categories,
-}: ScoreInput): number {
-  const baseScore = clamp((1 - totalSpent / totalBudget) * 100, 0, 100)
-  const streakMultiplier = 1 + Math.log(streakDays + 1) * 0.1
-  const catConsistency =
-    categories.length === 0
-      ? 1
-      : categories.filter((c) => c.spent < c.budget).length / categories.length
-  return clamp(baseScore * streakMultiplier * catConsistency, 0, 100)
-}
-
-export function computeBrokeScore(disciplineScore: number): number {
-  return 100 - disciplineScore
-}
+// ─── SINGLE SOURCE OF TRUTH — Discipline Score math ──────────────────────────
+// The actual scoring logic lives in supabase/functions/_shared/scoring.ts so the
+// live recompute path (this app) and the nightly cron Edge Function
+// (supabase/functions/compute-daily-score) share ONE implementation and cannot
+// drift. This file is a thin re-export — do NOT add or duplicate scoring logic
+// here. Edit the math in _shared/scoring.ts only.
+export { clamp, computeDisciplineScore, computeBrokeScore } from '../../supabase/functions/_shared/scoring'

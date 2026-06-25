@@ -23,7 +23,6 @@ import { useTheme } from '../lib/useTheme';
 import { FontFamily, Radius } from '../tokens';
 import { extractFromImage } from '../lib/ocr';
 import type { ParseResult } from '../lib/ocr';
-import { isNetworkError } from '../lib/offlineQueue';
 import { Toast } from '../src/components/Toast';
 
 type OcrState = 'idle' | 'picked' | 'extracting' | 'done' | 'error';
@@ -41,9 +40,11 @@ function isResultEmpty(r: ParseResult): boolean {
 }
 
 function classifyError(e: unknown): ErrorKind {
+  // The OCR pipeline is fully on-device (ML Kit + pure parser) with zero
+  // network calls, so a failure here is never an offline condition — anything
+  // that isn't a missing native module falls through to a generic read error.
   const msg = e instanceof Error ? e.message.toLowerCase() : '';
   if (msg.includes('not available')) return 'ocr_unavailable';
-  if (isNetworkError(e)) return 'network';
   return 'generic';
 }
 
@@ -155,6 +156,12 @@ export default function OcrScreen({ navigation }: any) {
       setState('done');
       navigation.navigate('OcrConfirm', { result, imageUri });
     } catch (e) {
+      // TEMP DEBUG: surface the real OCR failure in the Metro/Expo terminal.
+      console.error('[OCR DEBUG]', {
+        message: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+        name: e instanceof Error ? e.name : undefined,
+      });
       setErrorKind(classifyError(e));
       setState('error');
     }

@@ -94,6 +94,7 @@ function AppContent({ onLayoutRootView, fontsLoaded }: { onLayoutRootView: () =>
     <View style={{ flex: 1, backgroundColor: tokens.bg }} onLayout={onLayoutRootView}>
       <NavigationContainer ref={navigationRef}>
         <Stack.Navigator
+          id="RootStack"
           initialRouteName="Splash"
           screenOptions={{ headerShown: false, animation: 'fade' }}
         >
